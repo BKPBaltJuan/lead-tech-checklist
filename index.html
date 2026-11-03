@@ -1,0 +1,2049 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Installable web app: manifest, icons, and home-screen metadata -->
+    <link rel="manifest" href="assets/manifest.webmanifest" />
+    <meta name="theme-color" content="#0068b2" />
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Lead Tech" />
+    <title>Lead Tech Daily Checklist</title>
+    <style>
+      :root {
+        /* Palette sampled from the BK Packz logo:
+           deep blue #0068b2 · sky blue #00b6ee · gold #dabb30 / yellow #fff000 */
+        --bg: #e9f5fb;
+        --surface: #ffffff;
+        --surface-2: #d9edf7;
+        --ink: #0e2a3d;
+        --ink-soft: #3e5c70;
+        --line: #b8d7e8;
+        --brand: #0068b2;
+        --accent: #0068b2;
+        --accent-ink: #ffffff;
+        --accent-soft: #cfeaf9;
+        --heading: #005b9e;
+        --sky: #00b6ee;
+        --gold: #dabb30;
+        --gold-ink: #2f2703;
+        --gold-soft: #fbf3cd;
+        --gold-line: #a98f14;
+        --ok: #0b7038;
+        --ok-soft: #e3f2e7;
+        --danger: #b3261e;
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #081722;
+          --surface: #10222f;
+          --surface-2: #1a3243;
+          --ink: #eef7fc;
+          --ink-soft: #a7c3d3;
+          --line: #2b4a5e;
+          --brand: #0068b2;
+          --accent: #00b6ee;
+          --accent-ink: #032635;
+          --accent-soft: #0f3d55;
+          --heading: #57cdf7;
+          --sky: #00b6ee;
+          --gold: #dabb30;
+          --gold-ink: #2f2703;
+          --gold-soft: #3d370e;
+          --gold-line: #dabb30;
+          --ok: #4cc06c;
+          --ok-soft: #1e3325;
+          --danger: #f0766c;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+        line-height: 1.45;
+        /* The form scrolls in its own area above the action bar, so the
+           bar sits in the layout and can never cover a field or checkbox. */
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+      }
+      .wrap {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 16px 16px 8px;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      h1 {
+        font-size: 26px;
+        line-height: 1.15;
+        margin: 6px 0 2px;
+        letter-spacing: -0.01em;
+      }
+      .sub { color: var(--ink-soft); font-size: 15px; margin: 0 0 10px; }
+
+      /* Connection pill: a small Online/Offline indicator under the
+         subtitle, driven by navigator.onLine + online/offline events.
+         Offline turns gold to match the brand's "heads up" color. */
+      .net-row { margin: 0 0 14px; }
+      .net-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--ink-soft);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 99px;
+        padding: 4px 12px 4px 10px;
+        min-height: 26px;
+      }
+      .net-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--ok);
+        flex: 0 0 auto;
+      }
+      .net-pill.offline {
+        color: var(--gold-ink);
+        background: var(--gold-soft);
+        border-color: var(--gold-line);
+      }
+      .net-pill.offline .net-dot { background: var(--gold-line); }
+
+      /* Brand header: the BK Packz logo on a deep-blue band */
+      .brand-band {
+        background: var(--brand);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin: 2px 0 14px;
+      }
+      .brand-band img {
+        display: block;
+        width: 100%;
+        max-width: 460px;
+        margin: 0 auto;
+        height: auto;
+        border-radius: 6px;
+        background: #ffffff;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .card h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--heading);
+        margin: 0 0 12px;
+        font-weight: 700;
+      }
+
+      .field { margin-bottom: 12px; }
+      .field:last-child { margin-bottom: 0; }
+      label.flabel {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        margin-bottom: 5px;
+      }
+      input[type="text"], input[type="date"], textarea {
+        width: 100%;
+        font: inherit;
+        font-size: 17px;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 13px;
+        min-height: 50px;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+      textarea { min-height: 88px; resize: vertical; }
+      input:focus, textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .grid2 .field { margin-bottom: 0; }
+      @media (max-width: 340px) { .grid2 { grid-template-columns: 1fr; } }
+      /* Phone compaction: keeps the whole Job details card — including the
+         address field — clear of the fixed bottom bar on first load. */
+      @media (max-width: 430px) {
+        .brand-band { padding: 10px 12px; margin-bottom: 10px; }
+        .brand-band img { width: 74%; }
+        h1 { margin-top: 2px; font-size: 23px; }
+        .sub { margin-bottom: 10px; }
+        .card { padding: 12px; }
+        .field { margin-bottom: 9px; }
+        .seg button { min-height: 46px; padding: 10px 8px; }
+        input[type="text"], input[type="date"] { min-height: 46px; padding: 10px 12px; }
+        .btn { min-height: 44px; padding: 8px 12px; font-size: 16px; }
+      }
+      /* Desktop / wider phones: all three actions fit on one row, so the
+         bar stays slim. On narrow phones the Email button wraps to its
+         own full-width row (flex-basis 100% above). */
+      @media (min-width: 431px) {
+        .btn-email { flex: 1.6; }
+      }
+
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: var(--surface-2);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+      }
+      .seg button {
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        border: 0;
+        border-radius: 9px;
+        padding: 13px 8px;
+        background: transparent;
+        color: var(--ink-soft);
+        cursor: pointer;
+        min-height: 52px;
+      }
+      .seg button[aria-pressed="true"] {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      ul.checks { list-style: none; margin: 0; padding: 0; }
+      ul.checks li { border-bottom: 1px solid var(--line); }
+      ul.checks li:last-child { border-bottom: 0; }
+      .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 13px 2px;
+        cursor: pointer;
+        min-height: 54px;
+      }
+      .check input {
+        appearance: none;
+        -webkit-appearance: none;
+        flex: 0 0 auto;
+        width: 30px; height: 30px;
+        margin: 1px 0 0;
+        border: 2px solid var(--ink-soft);
+        border-radius: 8px;
+        background: var(--surface);
+        cursor: pointer;
+        display: grid;
+        place-content: center;
+        transition: background 0.12s ease, border-color 0.12s ease;
+      }
+      .check input::after {
+        content: "";
+        width: 17px; height: 17px;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M4 12.5l5.2 5L20 6.5' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+      .check input:checked { background: var(--accent); border-color: var(--accent); }
+      .check input:checked::after { opacity: 1; transform: scale(1); }
+      .check input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); outline: none; }
+      .check .txt { font-size: 16.5px; padding-top: 4px; }
+      .check input:checked ~ .txt { color: var(--ink-soft); }
+
+      /* Initials item (typed sign-off instead of a checkbox) */
+      .init-row {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 13px 2px;
+        min-height: 54px;
+      }
+      .init-row .txt { font-size: 16.5px; flex: 1; }
+      .init-wrap { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+      .init-wrap .ilabel {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--ink-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      input.init-input {
+        width: 84px;
+        min-height: 48px;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      input.init-input.filled { border-color: var(--gold-line); background: var(--gold-soft); }
+
+      /* Yes / No item (selection instead of a checkbox) */
+      .yn-row {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 13px 2px;
+        min-height: 54px;
+        flex-wrap: wrap;
+      }
+      .yn-row .txt { font-size: 16.5px; flex: 1; min-width: 180px; }
+      .yn-row .txt.answered { color: var(--ink-soft); }
+      .yn-seg {
+        display: flex;
+        background: var(--surface-2);
+        border-radius: 10px;
+        padding: 3px;
+        gap: 3px;
+        flex: 0 0 auto;
+      }
+      .yn-seg button {
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        border: 0;
+        border-radius: 7px;
+        padding: 9px 18px;
+        background: transparent;
+        color: var(--ink-soft);
+        cursor: pointer;
+        min-height: 44px;
+        min-width: 64px;
+      }
+      .yn-seg button[aria-pressed="true"] {
+        background: var(--gold);
+        color: var(--gold-ink);
+      }
+      .yn-seg button:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+
+      .hidden { display: none !important; }
+
+      /* Install affordance: shown only when the browser offers an install
+         prompt, or as a one-line hint on iOS. Hidden once installed. */
+      .install-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 14px; }
+      .btn-install {
+        font: inherit;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--heading);
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 99px;
+        padding: 8px 16px;
+        min-height: 40px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-install svg { flex: 0 0 auto; }
+      .ios-hint {
+        font-size: 14px;
+        color: var(--ink-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .ios-hint svg { flex: 0 0 auto; color: var(--heading); }
+
+      /* Keep fields clear of the fixed bottom action bar when they are
+         scrolled into view (e.g. tapped or tabbed to on a phone). */
+      input, textarea, .check, .init-row, .yn-row, section.card {
+        scroll-margin-top: 12px;
+        scroll-margin-bottom: 24px;
+      }
+
+      .progress-note { font-size: 13.5px; color: var(--ink-soft); margin-top: 10px; }
+
+      /* Action bar: a layout footer under the scrolling form (not an
+         overlay), so it never covers checklist controls. */
+      .bar {
+        position: relative;
+        flex: 0 0 auto;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        padding: 5px 16px calc(5px + env(safe-area-inset-bottom));
+        z-index: 20;
+      }
+      .bar-inner { max-width: 680px; margin: 0 auto; }
+      .pmeta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 14px;
+        margin-bottom: 4px;
+        line-height: 1.25;
+      }
+      .pmeta .count { font-weight: 800; font-size: 15px; }
+      .pmeta .pct { color: var(--ink-soft); font-weight: 600; }
+      .pmeta .done-all { color: var(--ok); font-weight: 800; }
+      /* Progress rides the bar's top edge as a 4px line, so the bar
+         itself stays slim and covers less of the form beneath it. */
+      .track {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: var(--surface-2);
+        overflow: hidden;
+        margin: 0;
+      }
+      .fill {
+        height: 100%;
+        width: 0%;
+        background: var(--sky);
+        transition: width 0.25s ease, background 0.25s ease;
+      }
+      .fill.complete { background: var(--gold); }
+      .pmeta .save-status {
+        flex: 1;
+        text-align: center;
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        padding: 0 8px;
+      }
+      .reset-row { text-align: center; margin: 2px 0 10px; }
+      .reset-btn {
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        background: transparent;
+        color: var(--ink-soft);
+        border: 0;
+        padding: 10px 8px;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .reset-btn.confirm { color: var(--danger); }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+      .btn {
+        font: inherit;
+        font-size: 17px;
+        font-weight: 800;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        min-height: 48px;
+        padding: 10px 16px;
+      }
+      .btn-primary { background: var(--accent); color: var(--accent-ink); flex: 1.4; }
+      .btn-ghost {
+        background: var(--surface-2);
+        color: var(--ink);
+        flex: 1;
+        border: 1.5px solid var(--line);
+      }
+      .btn-email {
+        background: var(--gold);
+        color: var(--gold-ink);
+        flex: 1 1 100%;
+        border: 1.5px solid var(--gold-line);
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn:disabled { opacity: 0.55; cursor: default; }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        bottom: 172px;
+        background: var(--ink);
+        color: var(--bg);
+        font-size: 15px;
+        font-weight: 600;
+        padding: 12px 18px;
+        border-radius: 99px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 30;
+        max-width: calc(100vw - 32px);
+        text-align: center;
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      /* Persistent error banner: send/share failures stay on screen
+         with the real error text until dismissed — a 3-second toast
+         reads as "the button did nothing" in the field. */
+      .error-banner {
+        position: fixed;
+        top: calc(10px + env(safe-area-inset-top));
+        left: 12px;
+        right: 12px;
+        z-index: 60;
+        background: var(--danger);
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+      }
+      .error-banner span {
+        flex: 1;
+        font-size: 14.5px;
+        font-weight: 600;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .error-banner button {
+        flex: 0 0 auto;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        border-radius: 8px;
+        min-height: 36px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+
+      /* The confirmation's Open/Download PDF controls are real links
+         (the tech's own tap navigates/downloads), so style them like
+         the buttons they sit next to. */
+      .confirm-actions a.btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-sizing: border-box;
+      }
+
+      /* Confirmation screen: a full-screen in-page panel shown after
+         Send to Supervisor. It never navigates anywhere — the tech
+         returns to the checklist with the button at the bottom. */
+      .confirm-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background: var(--bg);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+        display: flex;
+      }
+      .confirm-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 26px 20px 22px;
+        max-width: 480px;
+        width: 100%;
+        margin: auto;
+        text-align: center;
+      }
+      .confirm-card img.kangaroo {
+        display: block;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 14px;
+        border-radius: 28px;
+      }
+      .confirm-card h2 {
+        font-size: 23px;
+        line-height: 1.2;
+        margin: 0 0 8px;
+        color: var(--heading);
+      }
+      .confirm-card p {
+        font-size: 15.5px;
+        color: var(--ink-soft);
+        margin: 0 0 16px;
+      }
+      .confirm-summary {
+        text-align: left;
+        background: var(--surface-2);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin: 0 0 18px;
+      }
+      .confirm-summary .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 14px;
+        padding: 5px 0;
+        font-size: 15px;
+      }
+      .confirm-summary .row + .row { border-top: 1px solid var(--line); }
+      .confirm-summary .k { color: var(--ink-soft); font-weight: 600; flex: 0 0 auto; }
+      .confirm-summary .v { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+      .confirm-actions { display: flex; flex-direction: column; gap: 10px; }
+      .confirm-actions .btn { width: 100%; flex: none; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fill, .check input, .check input::after, .toast { transition: none; }
+      }
+
+      /* Print the whole form, not just the visible scroll area. */
+      @media print {
+        body { height: auto; display: block; }
+        .wrap { overflow: visible; }
+        .bar, .confirm-overlay, .net-row { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="brand-band">
+        <img src="assets/bk-packoutz-logo.png" alt="BK Packz logo" width="517" height="155" />
+      </div>
+      <h1>Lead Tech Daily Checklist</h1>
+      <p class="sub">BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.</p>
+
+      <!-- Connection indicator: updated by script from navigator.onLine
+           and the online/offline events. The checklist itself works
+           either way — progress auto-saves on this phone offline too. -->
+      <div class="net-row">
+        <span class="net-pill" id="net-pill" role="status"><span class="net-dot" aria-hidden="true"></span><span id="net-label">Online</span></span>
+      </div>
+
+      <!-- Install affordance: filled in by script only when install is
+           possible (browser prompt) or needed (iOS hint). -->
+      <div class="install-row hidden" id="install-row">
+        <button type="button" class="btn-install hidden" id="btn-install">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0l-4.2-4.2M12 14l4.2-4.2M4.5 19.5h15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Install app
+        </button>
+        <span class="ios-hint hidden" id="ios-hint">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 15V4m0 0L8.2 7.8M12 4l3.8 3.8M6 11H5.5A1.5 1.5 0 004 12.5v7A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-7A1.5 1.5 0 0018.5 11H18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          To install: tap Share, then “Add to Home Screen.”
+        </span>
+      </div>
+
+      <!-- Job header -->
+      <section class="card" aria-label="Job details">
+        <h2>Job details</h2>
+        <div class="field">
+          <label class="flabel" for="f-type">Job type</label>
+          <div class="seg" role="group" aria-label="Job type">
+            <button type="button" id="type-packout" aria-pressed="true">Packout</button>
+            <button type="button" id="type-packback" aria-pressed="false">Packback</button>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label class="flabel" for="f-date">Date</label>
+            <input type="date" id="f-date" />
+          </div>
+          <div class="field">
+            <label class="flabel" for="f-job">Job number</label>
+            <input type="text" id="f-job" inputmode="text" placeholder="e.g. 737-26-00171" autocomplete="off" />
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label class="flabel" for="f-lead">Lead technician</label>
+          <input type="text" id="f-lead" placeholder="Your name" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-customer">Customer name</label>
+          <input type="text" id="f-customer" placeholder="Customer name" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-address">Job address</label>
+          <input type="text" id="f-address" placeholder="Street, city" autocomplete="off" />
+        </div>
+      </section>
+
+      <!-- 1. Job file & paperwork -->
+      <section class="card" data-section="Job file &amp; paperwork">
+        <h2>1 · Job file &amp; paperwork</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Trash / disposal authorization signed (if items are being disposed)</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Job details reviewed (address, scope, contact) in Proven Jobs</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Customer called — arrival window confirmed</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">LiveSwitch project set up / phone charged for recording</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 2. Crew -->
+      <section class="card" data-section="Crew">
+        <h2>2 · Crew</h2>
+        <div class="field">
+          <label class="flabel" for="f-crew">Crew for today — names</label>
+          <input type="text" id="f-crew" placeholder="e.g. Jennifer P., Ben W., Alberto G." autocomplete="off" />
+        </div>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Everyone has the address and start time</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 3. Truck & transport -->
+      <section class="card" data-section="Truck &amp; transport">
+        <h2>3 · Truck &amp; transport</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Truck fueled (WEX card in truck)</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Dollies, hand truck, and straps loaded</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">UNITS container delivery or pickup confirmed (if this job uses one)</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 4. Supplies loaded -->
+      <section class="card" data-section="Supplies loaded">
+        <h2>4 · Supplies loaded</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Boxes — small / medium / large</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Tape and dispensers</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Packing paper and bubble wrap</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Furniture pads / blankets</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Shrink wrap</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Labels and markers</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Floor protection and corner protectors</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Trash bags</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Basic tool kit</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 5. Packback only -->
+      <section class="card hidden" id="packback-section" data-section="Packback checks">
+        <h2>5 · Packback checks</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Pull list / inventory list in hand</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Vault or unit numbers confirmed</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Items verified against inventory before loading</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 6. Before leaving -->
+      <section class="card" data-section="Before leaving the warehouse">
+        <h2 id="final-heading">5 · Before leaving the warehouse</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Weather checked — rain supplies / plastic loaded if needed</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Load plan reviewed with crew</span></label></li>
+          <li id="initials-item" class="hidden">
+            <div class="init-row">
+              <span class="txt">Confirm all insured items are loaded</span>
+              <span class="init-wrap">
+                <label class="ilabel" for="f-initials">Initials</label>
+                <input type="text" id="f-initials" class="init-input" maxlength="4" placeholder="—" autocomplete="off" autocapitalize="characters" aria-label="Lead technician initials confirming all insured items are loaded" />
+              </span>
+            </div>
+          </li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Warehouse secured / doors locked</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 7. During the day -->
+      <section class="card" data-section="During the day">
+        <h2 id="during-heading">6 · During the day</h2>
+        <ul class="checks">
+          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-in video on LiveSwitch</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Contact with insured</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Photos on iCat</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Secure furniture</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-out video on LiveSwitch</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-out photos on iCat (final day)</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Organize work area</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Secure truck</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Clean all trash before leaving</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 8. End of day -->
+      <section class="card" data-section="End of day">
+        <h2 id="eod-heading">7 · End of day</h2>
+        <ul class="checks">
+          <li>
+            <div class="yn-row" data-yn="unloaded">
+              <span class="txt" id="eod-question">Were contents unloaded from truck?</span>
+              <div class="yn-seg" role="group" aria-label="Were contents unloaded from truck?">
+                <button type="button" id="eod-yes" aria-pressed="false">Yes</button>
+                <button type="button" id="eod-no" aria-pressed="false">No</button>
+              </div>
+            </div>
+          </li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Truck driver filled out driving log</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Contents transferred to vaults</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Equipment returned to its place</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">LiveSwitch videos uploaded</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">iCat contents uploaded to cloud</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Close and secure loading dock bay</span></label></li>
+          <li><label class="check"><input type="checkbox" /><span class="txt">Warehouse secured / doors locked</span></label></li>
+        </ul>
+      </section>
+
+      <!-- Notes -->
+      <section class="card">
+        <h2>Notes</h2>
+        <div class="field">
+          <label class="flabel" for="f-notes">Anything the office should know</label>
+          <textarea id="f-notes" placeholder="Missing supplies, job concerns, changes…"></textarea>
+        </div>
+        <p class="progress-note">Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.</p>
+      </section>
+
+      <div class="reset-row">
+        <button type="button" class="reset-btn" id="btn-reset">Start over — clear this job's saved progress</button>
+      </div>
+    </main>
+
+    <!-- Sticky action bar -->
+    <div class="bar">
+      <div class="bar-inner">
+        <div class="pmeta">
+          <span class="count" id="p-count">0 of 39 checked</span>
+          <span class="save-status" id="save-status">Auto-saves on this phone</span>
+          <span class="pct" id="p-pct"></span>
+        </div>
+        <div class="track"><div class="fill" id="p-fill"></div></div>
+        <div class="actions">
+          <button type="button" class="btn btn-email" id="btn-email">Send to Supervisor</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- Persistent error banner: send/share failures land here with the
+         actual error text and stay until dismissed. -->
+    <div class="error-banner hidden" id="error-banner" role="alert">
+      <span id="error-text"></span>
+      <button type="button" id="error-dismiss">Dismiss</button>
+    </div>
+
+    <!-- Confirmation screen: shown in-page after Send to Supervisor.
+         The kangaroo is the approved app-icon artwork. On the fallback
+         path a Share button appears here — it acts only on the tech's
+         own tap and shares the PDF built during Send to Supervisor. -->
+    <div class="confirm-overlay hidden" id="confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-heading">
+      <div class="confirm-card">
+        <img class="kangaroo" src="assets/icon-512.png" alt="BK Packz kangaroo holding a checklist" width="512" height="512" />
+        <h2 id="confirm-heading">Checklist sent to supervisor</h2>
+        <p id="confirm-text"></p>
+        <div class="confirm-summary">
+          <div class="row"><span class="k">Job number</span><span class="v" id="cs-job">—</span></div>
+          <div class="row"><span class="k">Customer</span><span class="v" id="cs-customer">—</span></div>
+          <div class="row"><span class="k">Job type</span><span class="v" id="cs-type">—</span></div>
+          <div class="row"><span class="k">Date</span><span class="v" id="cs-date">—</span></div>
+          <div class="row"><span class="k">Progress</span><span class="v" id="cs-progress">—</span></div>
+          <div class="row" id="cs-time-row"><span class="k">Submitted</span><span class="v" id="cs-time">—</span></div>
+        </div>
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-email hidden" id="btn-share">Share</button>
+          <a class="btn btn-ghost hidden" id="btn-open-pdf" href="#" target="_blank" rel="noopener">Open PDF</a>
+          <a class="btn btn-ghost hidden" id="btn-download-pdf" href="#" download>Download PDF</a>
+          <button type="button" class="btn btn-primary" id="btn-return">Return to checklist</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var $ = function (id) { return document.getElementById(id); };
+
+        /* ---------- State ---------- */
+        var jobType = "packout";
+        var btnPackout = $("type-packout");
+        var btnPackback = $("type-packback");
+        var packbackSection = $("packback-section");
+        var initialsItem = $("initials-item");
+        var finalHeading = $("final-heading");
+        var duringHeading = $("during-heading");
+        var eodHeading = $("eod-heading");
+        var btnEodYes = $("eod-yes");
+        var btnEodNo = $("eod-no");
+        var eodQuestion = $("eod-question");
+        var eodAnswer = ""; // "", "Yes", or "No"
+
+        function setEodAnswer(v, skipSave) {
+          eodAnswer = (v === "Yes" || v === "No") ? v : "";
+          if (btnEodYes) { btnEodYes.setAttribute("aria-pressed", eodAnswer === "Yes" ? "true" : "false"); }
+          if (btnEodNo) { btnEodNo.setAttribute("aria-pressed", eodAnswer === "No" ? "true" : "false"); }
+          if (eodQuestion) { eodQuestion.classList.toggle("answered", eodAnswer !== ""); }
+          updateProgress();
+          if (!skipSave) { saveState(); }
+        }
+        if (btnEodYes) { btnEodYes.addEventListener("click", function () { setEodAnswer(eodAnswer === "Yes" ? "" : "Yes"); }); }
+        if (btnEodNo) { btnEodNo.addEventListener("click", function () { setEodAnswer(eodAnswer === "No" ? "" : "No"); }); }
+
+        function setType(t) {
+          jobType = (t === "packback") ? "packback" : "packout";
+          btnPackout.setAttribute("aria-pressed", jobType === "packout" ? "true" : "false");
+          btnPackback.setAttribute("aria-pressed", jobType === "packback" ? "true" : "false");
+          packbackSection.classList.toggle("hidden", jobType !== "packback");
+          // The initials sign-off is packback-only: hidden on packouts.
+          // The typed value itself is left untouched, so switching back
+          // to Packback restores it.
+          if (initialsItem) { initialsItem.classList.toggle("hidden", jobType !== "packback"); }
+          finalHeading.textContent = (jobType === "packback" ? "6" : "5") + " · Before leaving the warehouse";
+          duringHeading.textContent = (jobType === "packback" ? "7" : "6") + " · During the day";
+          if (eodHeading) { eodHeading.textContent = (jobType === "packback" ? "8" : "7") + " · End of day"; }
+          updateProgress();
+        }
+        btnPackout.addEventListener("click", function () { setType("packout"); saveState(); });
+        btnPackback.addEventListener("click", function () { setType("packback"); saveState(); });
+
+        /* ---------- Prefill: defaults, then URL params ---------- */
+        function todayISO() {
+          var d = new Date();
+          var m = String(d.getMonth() + 1).padStart(2, "0");
+          var day = String(d.getDate()).padStart(2, "0");
+          return d.getFullYear() + "-" + m + "-" + day;
+        }
+        $("f-date").value = todayISO();
+
+        var params = new URLSearchParams(window.location.search);
+        function prefill(param, id) {
+          var v = params.get(param);
+          if (v !== null && v.trim() !== "") { $(id).value = v.trim(); }
+        }
+        prefill("job", "f-job");
+        prefill("customer", "f-customer");
+        prefill("address", "f-address");
+        prefill("lead", "f-lead");
+        prefill("date", "f-date");
+        var typeParam = params.get("type");
+        if (typeParam) { setType(typeParam.toLowerCase()); }
+
+        /* ---------- Auto-save on this phone (per job) ---------- */
+        var SAVE_PREFIX = "bkpackz-ltc:";
+        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-address", "f-crew", "f-notes", "f-initials"];
+        var currentKey = null;
+        var saveStatusTimer = null;
+
+        function storageGet(k) {
+          try { return window.localStorage.getItem(k); } catch (e) { return null; }
+        }
+        function storageSet(k, v) {
+          try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; }
+        }
+        function storageRemove(k) {
+          try { window.localStorage.removeItem(k); } catch (e) { /* ignore */ }
+        }
+
+        // One save slot per job: job number + date wins; otherwise
+        // customer + date; otherwise just the date (blank link).
+        function stateKey() {
+          var job = $("f-job").value.trim();
+          var cust = $("f-customer").value.trim().toLowerCase();
+          var date = $("f-date").value.trim();
+          var who = job ? "job:" + job : (cust ? "cust:" + cust : "blank");
+          return SAVE_PREFIX + who + "|" + date;
+        }
+
+        function allBoxes() {
+          return document.querySelectorAll('ul.checks input[type="checkbox"]');
+        }
+
+        function snapshot() {
+          var fields = {};
+          FIELD_IDS.forEach(function (id) { fields[id] = $(id).value; });
+          var checks = [];
+          allBoxes().forEach(function (b) { checks.push(!!b.checked); });
+          return { v: 1, type: jobType, fields: fields, checks: checks, eodAnswer: eodAnswer, savedAt: Date.now() };
+        }
+
+        function flashSaved() {
+          var el = $("save-status");
+          el.textContent = "Saved ✓";
+          clearTimeout(saveStatusTimer);
+          saveStatusTimer = setTimeout(function () {
+            el.textContent = "Auto-saves on this phone";
+          }, 2400);
+        }
+
+        function saveState() {
+          var key = stateKey();
+          if (currentKey && currentKey !== key) {
+            // The job identity changed (e.g. job # typed in) — carry the
+            // progress over to the new slot instead of leaving a stray copy.
+            storageRemove(currentKey);
+          }
+          currentKey = key;
+          if (storageSet(key, JSON.stringify(snapshot()))) {
+            // Remember which job was touched last, so reopening a plain
+            // link (no job in the URL) can find its in-progress checklist.
+            storageSet(SAVE_PREFIX + "last", key);
+            flashSaved();
+          }
+        }
+
+        function applyState(s) {
+          if (!s || typeof s !== "object") { return false; }
+          if (s.fields) {
+            FIELD_IDS.forEach(function (id) {
+              if (typeof s.fields[id] === "string") { $(id).value = s.fields[id]; }
+            });
+          }
+          if (s.type) { setType(s.type); }
+          if (Array.isArray(s.checks)) {
+            var boxes = allBoxes();
+            for (var i = 0; i < boxes.length && i < s.checks.length; i++) {
+              boxes[i].checked = !!s.checks[i];
+            }
+          }
+          if (typeof s.eodAnswer === "string") { setEodAnswer(s.eodAnswer, true); }
+          updateProgress();
+          return true;
+        }
+
+        // Restore this job's saved progress, if any (URL prefill already applied).
+        currentKey = stateKey();
+        (function restore() {
+          var raw = storageGet(currentKey);
+          if (!raw && !params.get("job") && !params.get("customer")) {
+            // Plain link with nothing pre-filled: fall back to the job this
+            // phone was working on most recently.
+            var lastKey = storageGet(SAVE_PREFIX + "last");
+            if (lastKey && lastKey !== currentKey) {
+              var lastRaw = storageGet(lastKey);
+              if (lastRaw) { raw = lastRaw; currentKey = lastKey; }
+            }
+          }
+          if (!raw) { return; }
+          try {
+            if (applyState(JSON.parse(raw))) {
+              currentKey = stateKey();
+              $("save-status").textContent = "Picked up where you left off";
+            }
+          } catch (e) { /* corrupted save — start fresh */ }
+        })();
+
+        // Save on every change: typing, picking a date, checking a box.
+        document.addEventListener("input", function (e) {
+          if (e.target && FIELD_IDS.indexOf(e.target.id) >= 0) { saveState(); }
+        });
+        document.addEventListener("change", function (e) {
+          if (!e.target) { return; }
+          if (e.target.type === "checkbox" || FIELD_IDS.indexOf(e.target.id) >= 0) { saveState(); }
+        });
+
+        /* ---------- Start over (clears this job's saved progress) ---------- */
+        var resetBtn = $("btn-reset");
+        var resetArmed = false;
+        var resetTimer = null;
+        function disarmReset() {
+          resetArmed = false;
+          resetBtn.textContent = "Start over — clear this job's saved progress";
+          resetBtn.classList.remove("confirm");
+          clearTimeout(resetTimer);
+        }
+        resetBtn.addEventListener("click", function () {
+          if (!resetArmed) {
+            resetArmed = true;
+            resetBtn.textContent = "Tap again to clear everything";
+            resetBtn.classList.add("confirm");
+            resetTimer = setTimeout(disarmReset, 3500);
+            return;
+          }
+          disarmReset();
+          if (currentKey) { storageRemove(currentKey); }
+          if (storageGet(SAVE_PREFIX + "last") === currentKey) {
+            storageRemove(SAVE_PREFIX + "last");
+          }
+          // Back to a fresh form: URL prefill + today's date, nothing checked.
+          FIELD_IDS.forEach(function (id) { $(id).value = ""; });
+          $("f-date").value = todayISO();
+          prefill("job", "f-job");
+          prefill("customer", "f-customer");
+          prefill("address", "f-address");
+          prefill("lead", "f-lead");
+          prefill("date", "f-date");
+          setType(typeParam ? typeParam.toLowerCase() : "packout");
+          allBoxes().forEach(function (b) { b.checked = false; });
+          setEodAnswer("", true);
+          updateProgress();
+          currentKey = stateKey();
+          $("save-status").textContent = "Auto-saves on this phone";
+          toast("Started fresh — this job's saved progress was cleared.");
+        });
+
+        /* ---------- Progress ---------- */
+        function visibleBoxes() {
+          var all = document.querySelectorAll('ul.checks input[type="checkbox"]');
+          var out = [];
+          for (var i = 0; i < all.length; i++) {
+            var sec = all[i].closest("section");
+            if (!sec || !sec.classList.contains("hidden")) { out.push(all[i]); }
+          }
+          return out;
+        }
+        function updateProgress() {
+          var boxes = visibleBoxes();
+          var done = 0;
+          boxes.forEach(function (b) { if (b.checked) { done++; } });
+          var total = boxes.length;
+          // The initials item is packback-only: on packbacks it counts
+          // as one more item — done once initials are typed, not done
+          // while blank. On packouts it is not counted at all.
+          var initEl = $("f-initials");
+          if (initEl) {
+            var filled = initEl.value.trim() !== "";
+            initEl.classList.toggle("filled", filled);
+            if (jobType === "packback") {
+              total += 1;
+              if (filled) { done++; }
+            }
+          }
+          // The End of day Yes/No item counts as one more item: done
+          // once either Yes or No is chosen.
+          total += 1;
+          if (eodAnswer === "Yes" || eodAnswer === "No") { done++; }
+          $("p-count").textContent = done + " of " + total + " checked";
+          var pct = total ? Math.round((done / total) * 100) : 0;
+          var pctEl = $("p-pct");
+          if (done === total && total > 0) {
+            pctEl.textContent = "All done — ready to roll";
+            pctEl.className = "done-all";
+          } else {
+            pctEl.textContent = pct + "%";
+            pctEl.className = "pct";
+          }
+          $("p-fill").style.width = pct + "%";
+          $("p-fill").classList.toggle("complete", done === total && total > 0);
+        }
+        document.addEventListener("change", function (e) {
+          if (e.target && e.target.type === "checkbox") { updateProgress(); }
+        });
+        $("f-initials").addEventListener("input", updateProgress);
+        updateProgress();
+
+        /* ---------- Toast ---------- */
+        var toastTimer = null;
+        function toast(msg) {
+          var t = $("toast");
+          t.textContent = msg;
+          t.classList.add("show");
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3200);
+        }
+
+        /* ---------- Visible errors ----------
+           No silent failures in the send/share flow: any error lands in
+           the persistent banner with the browser's actual error name and
+           message, so a failure in the field is diagnosable instead of
+           looking like a dead button. */
+        function errText(err) {
+          if (!err) { return "Unknown error"; }
+          if (typeof err === "string") { return err; }
+          var n = err.name || "Error";
+          var m = err.message || String(err);
+          return (m && m.indexOf(n) !== 0) ? (n + ": " + m) : m;
+        }
+        function showError(context, err) {
+          var banner = $("error-banner");
+          var detail = context + " — " + errText(err);
+          if (!banner) { toast(detail); return; }
+          $("error-text").textContent = detail;
+          banner.classList.remove("hidden");
+        }
+        function hideError() {
+          var banner = $("error-banner");
+          if (banner) { banner.classList.add("hidden"); }
+        }
+        var errorDismissBtn = $("error-dismiss");
+        if (errorDismissBtn) {
+          errorDismissBtn.addEventListener("click", hideError);
+        }
+
+        /* ---------- Connection pill ----------
+           Reflects navigator.onLine, kept current by the browser's
+           online/offline events. Purely informational: nothing in the
+           checklist is blocked offline — auto-save is on-device, the
+           PDF is built on-device, and share/download work without a
+           network (sharing still opens; email sends when coverage
+           returns). */
+        var netPill = $("net-pill");
+        var netLabel = $("net-label");
+        function updateNetPill() {
+          var online = navigator.onLine !== false;
+          if (netPill) { netPill.classList.toggle("offline", !online); }
+          if (netLabel) { netLabel.textContent = online ? "Online" : "Offline"; }
+        }
+        window.addEventListener("online", updateNetPill);
+        window.addEventListener("offline", updateNetPill);
+        updateNetPill();
+
+        /* ---------- Collect answers ---------- */
+        function val(id) { return $(id).value.trim(); }
+
+        function collect() {
+          var sections = [];
+          var cards = document.querySelectorAll("section.card[data-section]");
+          cards.forEach(function (card) {
+            if (card.classList.contains("hidden")) { return; }
+            var items = [];
+            // Walk the list in on-screen order so the initials sign-off
+            // (no checkbox) lands in the PDF where it sits on the page.
+            var lis = card.querySelectorAll("ul.checks li");
+            lis.forEach(function (li) {
+              // Skip hidden rows (the packback-only initials sign-off on
+              // a packout) so they never reach the PDF.
+              if (li.classList.contains("hidden")) { return; }
+              var b = li.querySelector('input[type="checkbox"]');
+              if (b) {
+                var label = b.closest("label");
+                var txt = label ? label.querySelector(".txt").textContent.trim() : "";
+                items.push({ text: txt, done: b.checked });
+                return;
+              }
+              var initInput = li.querySelector("#f-initials");
+              if (initInput) {
+                // Initials sign-off: shows "Initials: XX" on the PDF when
+                // filled, NOT DONE while blank.
+                var initials = initInput.value.trim().toUpperCase();
+                var span = li.querySelector(".txt");
+                var base = span ? span.textContent.trim() : "Confirm all insured items are loaded";
+                items.push({
+                  text: base + (initials ? " — Initials: " + initials : ""),
+                  done: initials !== ""
+                });
+                return;
+              }
+              var ynRow = li.querySelector("[data-yn]");
+              if (ynRow) {
+                var ynSpan = li.querySelector(".txt");
+                var ynBase = ynSpan ? ynSpan.textContent.trim() : "Were contents unloaded from truck?";
+                var answered = (eodAnswer === "Yes" || eodAnswer === "No");
+                items.push({
+                  text: ynBase + (answered ? " — " + eodAnswer : ""),
+                  done: answered
+                });
+                return;
+              }
+            });
+            var extra = null;
+            if (card.getAttribute("data-section") === "Crew") {
+              extra = { label: "Crew for today", value: val("f-crew") };
+            }
+            if (items.length || extra) {
+              sections.push({ title: card.getAttribute("data-section"), items: items, extra: extra });
+            }
+          });
+          return {
+            type: jobType === "packback" ? "Packback" : "Packout",
+            date: val("f-date"),
+            job: val("f-job"),
+            lead: val("f-lead"),
+            customer: val("f-customer"),
+            address: val("f-address"),
+            notes: val("f-notes"),
+            sections: sections,
+            completedAt: new Date()
+          };
+        }
+
+        function fileName(data) {
+          var job = (data.job || "job").replace(/[^A-Za-z0-9-]+/g, "");
+          var date = (data.date || todayISO()).replace(/[^0-9-]+/g, "");
+          return "LeadTechDailyChecklist_" + job + "_" + date + ".pdf";
+        }
+
+        /* ---------- Minimal PDF writer (Letter, Helvetica) ---------- */
+        function esc(s) {
+          return String(s).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)")
+            .replace(/[^\x20-\x7E]/g, function (c) {
+              // Map a few common characters; drop anything else exotic.
+              var map = { "—": "-", "–": "-", "·": "-", "‘": "'", "’": "'", "“": '"', "”": '"', "•": "-", "…": "..." };
+              return map[c] !== undefined ? map[c] : "?";
+            });
+        }
+        // Approximate Helvetica advance widths (units of em) for wrapping.
+        function textWidth(s, size) {
+          var w = 0;
+          for (var i = 0; i < s.length; i++) {
+            var c = s.charAt(i);
+            if (c === " ") { w += 0.278; }
+            else if ("iljtf.,:;'!|".indexOf(c) >= 0) { w += 0.30; }
+            else if ("mwMW".indexOf(c) >= 0) { w += 0.88; }
+            else if (c >= "A" && c <= "Z") { w += 0.68; }
+            else { w += 0.53; }
+          }
+          return w * size;
+        }
+        function wrap(text, size, maxWidth) {
+          var words = String(text).split(/\s+/);
+          var lines = [];
+          var cur = "";
+          words.forEach(function (word) {
+            var test = cur ? cur + " " + word : word;
+            if (textWidth(test, size) > maxWidth && cur) {
+              lines.push(cur);
+              cur = word;
+            } else { cur = test; }
+          });
+          if (cur) { lines.push(cur); }
+          return lines.length ? lines : [""];
+        }
+
+        /* ---------- Logo for the PDF header ----------
+           The hand-rolled PDF writer works in plain ASCII strings, so the
+           logo is converted to JPEG in the browser and ASCII85-encoded —
+           the PDF then carries it as an [/ASCII85Decode /DCTDecode] image.
+           Loaded once at startup; if it ever fails, the PDF falls back to
+           the plain text header. */
+        function ascii85(bytes) {
+          var out = "";
+          for (var i = 0; i < bytes.length; i += 4) {
+            var n = Math.min(4, bytes.length - i);
+            var val = 0;
+            for (var j = 0; j < 4; j++) {
+              val = val * 256 + (j < n ? bytes[i + j] : 0);
+            }
+            var chars = "";
+            var v = val;
+            for (var k = 0; k < 5; k++) {
+              chars = String.fromCharCode(33 + (v % 85)) + chars;
+              v = Math.floor(v / 85);
+            }
+            out += (n === 4 && val === 0) ? "z" : chars.slice(0, n + 1);
+          }
+          return out + "~>";
+        }
+        var logoData = null; // { w, h, a85 } once loaded
+        (function loadLogo() {
+          try {
+            var img = new Image();
+            img.onload = function () {
+              try {
+                if (!img.naturalWidth || !img.naturalHeight) { return; }
+                var c = document.createElement("canvas");
+                c.width = img.naturalWidth;
+                c.height = img.naturalHeight;
+                var ctx = c.getContext("2d");
+                if (!ctx) { return; }
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, c.width, c.height);
+                ctx.drawImage(img, 0, 0);
+                if (!c.toBlob) { return; }
+                c.toBlob(function (blob) {
+                  if (!blob || !blob.arrayBuffer) { return; }
+                  blob.arrayBuffer().then(function (buf) {
+                    // Only trust a non-empty JPEG encode; anything else
+                    // leaves logoData null and the PDF uses its text
+                    // header instead of embedding a broken image.
+                    if (!buf || buf.byteLength < 100) { return; }
+                    logoData = { w: c.width, h: c.height, a85: ascii85(new Uint8Array(buf)) };
+                  }, function () { /* keep the text-only header */ });
+                }, "image/jpeg", 0.92);
+              } catch (e) { /* logo in PDF is optional */ }
+            };
+            img.src = "assets/bk-packoutz-logo.png";
+          } catch (e) { /* ignore */ }
+        })();
+
+        function buildPdfImpl(data, logo) {
+          var PAGE_W = 612, PAGE_H = 792, M = 48;
+          var RIGHT = PAGE_W - M;
+          var pages = [];
+          var ops = [];
+          var y = PAGE_H - M;
+
+          function newPage() {
+            if (ops.length) { pages.push(ops.join("\n")); }
+            ops = [];
+            y = PAGE_H - M;
+          }
+          function need(h) { if (y - h < M) { newPage(); } }
+          function text(x, yy, s, font, size, gray) {
+            ops.push("BT /" + font + " " + size + " Tf " + (gray || 0) + " g " +
+              x.toFixed(1) + " " + yy.toFixed(1) + " Td (" + esc(s) + ") Tj ET");
+          }
+          function line(x1, yy, x2, color, width) {
+            ops.push((color || 0) + " G " + (width || 0.7) + " w " + x1 + " " + yy.toFixed(1) +
+              " m " + x2 + " " + yy.toFixed(1) + " l S");
+          }
+          // Brand colors from the logo: deep blue "0 0.41 0.70", sky "0 0.71 0.93"
+          function textC(x, yy, s, font, size, rgb) {
+            ops.push("BT /" + font + " " + size + " Tf " + rgb + " rg " +
+              x.toFixed(1) + " " + yy.toFixed(1) + " Td (" + esc(s) + ") Tj ET");
+          }
+          function lineC(x1, yy, x2, rgb, width) {
+            ops.push(rgb + " RG " + (width || 0.7) + " w " + x1 + " " + yy.toFixed(1) +
+              " m " + x2 + " " + yy.toFixed(1) + " l S");
+          }
+          function para(s, size, font, leading, gray, indent) {
+            var x = M + (indent || 0);
+            var lines = wrap(s, size, RIGHT - x);
+            lines.forEach(function (ln) {
+              need(leading);
+              text(x, y, ln, font, size, gray);
+              y -= leading;
+            });
+            return lines.length;
+          }
+
+          /* Header — logo on top, then the title in the logo's deep blue */
+          if (logo) {
+            var imgW = 210;
+            var imgH = Math.round(imgW * logo.h / logo.w);
+            ops.push("q " + imgW.toFixed(1) + " 0 0 " + imgH.toFixed(1) + " " +
+              M + " " + (y - imgH).toFixed(1) + " cm /Im1 Do Q");
+            y -= imgH + 16;
+          } else {
+            text(M, y, "BK PACKZ", "F2", 13, 0.62); y -= 24;
+          }
+          textC(M, y, "Lead Tech Daily Checklist", "F2", 21, "0 0.41 0.70"); y -= 20;
+          text(M, y, data.type.toUpperCase() + "  ·  Job " + (data.job || "—"), "F2", 12.5, 0.3); y -= 10;
+          lineC(M, y, RIGHT, "0 0.71 0.93", 1.4); y -= 22;
+
+          var fields = [
+            ["Date", data.date || "—"],
+            ["Lead Technician", data.lead || "—"],
+            ["Job Number", data.job || "—"],
+            ["Customer", data.customer || "—"],
+            ["Address", data.address || "—"],
+            ["Job Type", data.type]
+          ];
+          fields.forEach(function (f) {
+            need(17);
+            text(M, y, f[0] + ":", "F2", 10.5, 0.35);
+            var lines = wrap(f[1], 10.5, RIGHT - M - 118);
+            text(M + 118, y, lines[0], "F1", 10.5);
+            y -= 16;
+            for (var i = 1; i < lines.length; i++) {
+              need(15);
+              text(M + 118, y, lines[i], "F1", 10.5);
+              y -= 16;
+            }
+          });
+          y -= 6;
+          line(M, y, RIGHT, 0.75, 0.7); y -= 24;
+
+          /* Sections */
+          var totalDone = 0, totalItems = 0;
+          data.sections.forEach(function (sec, si) {
+            need(30);
+            textC(M, y, (si + 1) + ".  " + sec.title.toUpperCase(), "F2", 11.5, "0 0.41 0.70"); y -= 6;
+            line(M, y, RIGHT, 0.85, 0.5); y -= 17;
+
+            if (sec.extra) {
+              para(sec.extra.label + ":  " + (sec.extra.value || "—"), 10.5, "F1", 14, 0);
+              y -= 5;
+            }
+            sec.items.forEach(function (item) {
+              totalItems++;
+              if (item.done) { totalDone++; }
+              var lines = wrap(item.text, 10.5, RIGHT - M - 46);
+              need(14 * lines.length + 2);
+              var topY = y;
+              // Checkbox: 9pt square at left
+              var bx = M + 2, by = topY - 1;
+              ops.push("0.25 G 0.9 w " + bx + " " + (by - 7) + " 9 9 re S");
+              if (item.done) {
+                ops.push("0 0.41 0.70 RG 1.4 w " + (bx + 1.6) + " " + (by - 3.4) +
+                  " m " + (bx + 3.9) + " " + (by - 5.8) + " l " + (bx + 7.6) + " " + (by + 0.6) + " l S 0 G");
+              }
+              lines.forEach(function (ln, li) {
+                text(M + 20, y, ln, "F1", 10.5, item.done ? 0.25 : 0);
+                if (li === 0) {
+                  var status = item.done ? "DONE" : "NOT DONE";
+                  var sw = textWidth(status, 8);
+                  text(RIGHT - sw, y, status, "F2", 8, item.done ? 0.35 : 0.05);
+                  // tint NOT DONE darker handled by gray 0.05; keep visible
+                }
+                y -= 14;
+              });
+              y -= 3;
+            });
+            y -= 10;
+          });
+
+          /* Notes */
+          need(30);
+          text(M, y, "NOTES", "F2", 11.5); y -= 6;
+          line(M, y, RIGHT, 0.85, 0.5); y -= 17;
+          if (data.notes) {
+            para(data.notes, 10.5, "F1", 14, 0);
+          } else {
+            text(M, y, "—", "F1", 10.5, 0.4); y -= 14;
+          }
+          y -= 14;
+
+          /* Footer summary */
+          need(40);
+          line(M, y, RIGHT, 0.75, 0.7); y -= 20;
+          var stamp = data.completedAt.toLocaleString("en-US", {
+            weekday: "short", month: "short", day: "numeric", year: "numeric",
+            hour: "numeric", minute: "2-digit"
+          });
+          text(M, y, "Checklist completed: " + stamp, "F2", 10.5); y -= 15;
+          text(M, y, totalDone + " of " + totalItems + " items checked" +
+            (totalDone < totalItems ? " — items marked NOT DONE above still need attention." : " — everything checked off."), "F1", 10.5, 0.3);
+
+          pages.push(ops.join("\n"));
+
+          /* Assemble PDF objects */
+          var objects = [];
+          // 1 catalog, 2 pages, 3 font F1, 4 font F2
+          var pageObjNums = [];
+          var imgObjNum = logo ? 5 : 0;
+          var firstPageObj = logo ? 6 : 5;
+          for (var p = 0; p < pages.length; p++) { pageObjNums.push(firstPageObj + p * 2); }
+          var kids = pageObjNums.map(function (n) { return n + " 0 R"; }).join(" ");
+          objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+          objects[2] = "<< /Type /Pages /Kids [" + kids + "] /Count " + pages.length + " >>";
+          objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+          objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+          if (imgObjNum) {
+            objects[imgObjNum] = "<< /Type /XObject /Subtype /Image /Width " + logo.w +
+              " /Height " + logo.h + " /ColorSpace /DeviceRGB /BitsPerComponent 8" +
+              " /Filter [/ASCII85Decode /DCTDecode] /Length " + logo.a85.length +
+              " >>\nstream\n" + logo.a85 + "\nendstream";
+          }
+          pages.forEach(function (content, i) {
+            var pageNum = firstPageObj + i * 2;
+            var contentNum = pageNum + 1;
+            var footer = "BT /F1 8 Tf 0.45 g " + M + " 30 Td (" + esc("BK Packz - Lead Tech Daily Checklist - Page " +
+              (i + 1) + " of " + pages.length) + ") Tj ET";
+            var stream = content + "\n" + footer;
+            objects[pageNum] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + PAGE_W + " " + PAGE_H +
+              "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" +
+              (imgObjNum ? " /XObject << /Im1 " + imgObjNum + " 0 R >>" : "") +
+              " >> /Contents " + contentNum + " 0 R >>";
+            objects[contentNum] = "<< /Length " + stream.length + " >>\nstream\n" + stream + "\nendstream";
+          });
+
+          var out = "%PDF-1.4\n";
+          var offsets = [0];
+          var maxObj = firstPageObj + pages.length * 2 - 1;
+          for (var n = 1; n <= maxObj; n++) {
+            offsets[n] = out.length;
+            out += n + " 0 obj\n" + objects[n] + "\nendobj\n";
+          }
+          var xrefPos = out.length;
+          out += "xref\n0 " + (maxObj + 1) + "\n";
+          out += "0000000000 65535 f \n";
+          for (var k = 1; k <= maxObj; k++) {
+            out += String(offsets[k]).padStart(10, "0") + " 00000 n \n";
+          }
+          out += "trailer\n<< /Size " + (maxObj + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF";
+          // Sanity-check the finished document before handing it to the
+          // share sheet: a malformed or truncated build must fail loudly
+          // here (the caller shows the error on screen), never as a
+          // silent no-op at share time.
+          if (out.slice(0, 5) !== "%PDF-" || out.indexOf("%%EOF") < 0 || out.length < 1000) {
+            throw new Error("PDF builder produced an invalid file (" + out.length + " bytes)");
+          }
+          return new Blob([out], { type: "application/pdf" });
+        }
+
+        /* The embedded logo is the only non-text content in the PDF, so
+           it is the one part that can vary by device (image decode /
+           canvas JPEG encode). Only a well-formed logo record is used,
+           and if building with the logo throws for any reason, the PDF
+           is rebuilt with the plain text header — a missing logo must
+           never cost the whole checklist. */
+        function validLogo(l) {
+          if (!l) { return null; }
+          if (!(l.w > 0) || !(l.h > 0)) { return null; }
+          if (typeof l.a85 !== "string" || l.a85.length < 100) { return null; }
+          return l;
+        }
+
+        function buildPdf(data) {
+          var logo = validLogo(logoData);
+          try {
+            return buildPdfImpl(data, logo);
+          } catch (err) {
+            if (logo) {
+              return buildPdfImpl(data, null);
+            }
+            throw err;
+          }
+        }
+
+        /* ---------- Actions ---------- */
+        var lastBlob = null, lastName = "";
+
+        function makePdf() {
+          var data = collect();
+          lastBlob = buildPdf(data);
+          lastName = fileName(data);
+          if (!lastBlob || !(lastBlob.size > 1000)) {
+            throw new Error("The checklist PDF came out empty (" +
+              (lastBlob ? lastBlob.size : 0) + " bytes)");
+          }
+          return { blob: lastBlob, name: lastName, data: data };
+        }
+
+        var BK_EMAIL = "juan.rodriguez@bkpackz.com";
+
+        function emailSubject(data) {
+          var job = data.job || "No job number";
+          var customer = data.customer || "No customer";
+          var date = data.date || todayISO();
+          return "Lead Tech Daily Checklist \u2014 " + job + " " + customer +
+            " \u2014 " + data.type + " \u2014 " + date;
+        }
+
+        function progressSummary(data) {
+          var done = 0, total = 0;
+          data.sections.forEach(function (sec) {
+            sec.items.forEach(function (item) {
+              total++;
+              if (item.done) { done++; }
+            });
+          });
+          return { done: done, total: total };
+        }
+
+        function downloadBlob(blob, name) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        }
+
+        /* ---------- Send to Supervisor (combined Generate + Share) ----------
+           One tap builds the same PDF. Where the device can share files,
+           the share sheet opens with the PDF attached so the tech can pick
+           Mail/Gmail and send it to Juan — the sheet itself does not
+           pre-address the recipient. Where file sharing is unavailable or
+           the share call fails, the confirmation offers three real,
+           user-tapped ways at the same built PDF: a Share button
+           (navigator.share on the tap), an Open PDF link (the PDF in the
+           browser's own viewer, whose share/save buttons are native),
+           and a Download PDF link — plus a best-effort automatic
+           download. The links matter in restricted browsers (in-app
+           webviews, embedded frames) where a script-triggered download
+           click is silently blocked and navigator.share may be missing:
+           a genuine tap on a real link still goes through, and any
+           failure that can be detected is shown in the error banner
+           with its real error text instead of passing silently.
+           Nothing is sent automatically, and sharing is only ever
+           triggered by a real tap so the user-gesture activation holds. */
+        var emailBtn = $("btn-email");
+        var shareBtn = $("btn-share");
+        var openPdfLink = $("btn-open-pdf");
+        var downloadPdfLink = $("btn-download-pdf");
+        // The PDF File (and its context) built during Send to Supervisor,
+        // kept for the fallback Share button so its tap can call
+        // navigator.share directly with this exact object — no rebuild.
+        var pendingShare = null; // { file, data, name, subject }
+        // Object URL of the built PDF behind the Open/Download links;
+        // kept alive while the confirmation is up, revoked on Return.
+        var pendingPdfUrl = null;
+
+        function setPdfLinks(made) {
+          if (pendingPdfUrl) {
+            try { URL.revokeObjectURL(pendingPdfUrl); } catch (e) { /* ignore */ }
+            pendingPdfUrl = null;
+          }
+          try { pendingPdfUrl = URL.createObjectURL(made.blob); }
+          catch (e) { pendingPdfUrl = null; }
+          if (!pendingPdfUrl) { return; }
+          if (openPdfLink) {
+            openPdfLink.href = pendingPdfUrl;
+            openPdfLink.classList.remove("hidden");
+          }
+          if (downloadPdfLink) {
+            downloadPdfLink.href = pendingPdfUrl;
+            downloadPdfLink.setAttribute("download", made.name);
+            downloadPdfLink.classList.remove("hidden");
+          }
+        }
+
+        function clearPdfLinks() {
+          if (pendingPdfUrl) {
+            try { URL.revokeObjectURL(pendingPdfUrl); } catch (e) { /* ignore */ }
+            pendingPdfUrl = null;
+          }
+          if (openPdfLink) {
+            openPdfLink.classList.add("hidden");
+            openPdfLink.removeAttribute("href");
+          }
+          if (downloadPdfLink) {
+            downloadPdfLink.classList.add("hidden");
+            downloadPdfLink.removeAttribute("href");
+          }
+        }
+
+        function resetShareButton() {
+          if (!shareBtn) { return; }
+          shareBtn.textContent = "Share";
+          shareBtn.disabled = false;
+        }
+
+        /* ---------- Confirmation screen ----------
+           Shown in-page after a send attempt; it never navigates.
+           The summary is captured from the submitted checklist before
+           anything is cleared, and it stays visible until the tech
+           taps "Return to checklist" — that tap closes the screen,
+           scrolls the form back to the top, and resets the checklist
+           completely for the next job (see resetForNextJob). */
+        var confirmEl = $("confirm");
+        var wrapEl = document.querySelector(".wrap");
+
+        function fillConfirmSummary(data) {
+          var prog = progressSummary(data);
+          $("cs-job").textContent = data.job || "—";
+          $("cs-customer").textContent = data.customer || "—";
+          $("cs-type").textContent = data.type;
+          $("cs-date").textContent = data.date || "—";
+          $("cs-progress").textContent = prog.done + " of " + prog.total + " items checked";
+        }
+
+        function openConfirm() {
+          confirmEl.classList.remove("hidden");
+          if (wrapEl) { wrapEl.style.overflow = "hidden"; }
+          confirmEl.scrollTop = 0;
+        }
+
+        // Share-sheet path only: the share actually completed.
+        function showSentConfirmation(data) {
+          fillConfirmSummary(data);
+          $("confirm-heading").textContent = "✓ Checklist sent to supervisor";
+          $("confirm-text").textContent = "The checklist PDF was shared for this job. Tap “Return to checklist” to clear the form and start the next job.";
+          $("cs-time-row").classList.remove("hidden");
+          $("cs-time").textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+          if (shareBtn) { shareBtn.classList.add("hidden"); }
+          clearPdfLinks();
+          openConfirm();
+        }
+
+        // Fallback path: the PDF was built, but it hasn't been shared
+        // yet — worded that way on purpose. The Share button and the
+        // Open/Download PDF links are shown so the tech can send it
+        // from here, whichever route this phone's browser allows. If
+        // the direct share attempt failed on the way here, its real
+        // error text is included so the failure is visible, not silent.
+        function showReadyConfirmation(made, data, shareErr) {
+          fillConfirmSummary(data);
+          $("confirm-heading").textContent = "PDF ready to send";
+          var offlineNote = (navigator.onLine === false)
+            ? " You're offline — you can still share; email sends when you're back in coverage."
+            : "";
+          var errNote = shareErr
+            ? " Note: direct sharing failed on this phone (" + errText(shareErr) + ") — use one of the options below instead."
+            : "";
+          $("confirm-text").textContent = "The checklist PDF (" + made.name + ") was generated on this phone, and a copy was sent to Downloads where this browser allows it. Tap Share to send it — pick Mail, Gmail, Messages, or another app. If Share doesn't work here, tap Open PDF and use the viewer's own share or save buttons, or Download PDF to save a copy you can attach. When you're done, tap “Return to checklist” to clear the form for the next job." + errNote + offlineNote;
+          $("cs-time-row").classList.add("hidden");
+          if (shareBtn) {
+            resetShareButton();
+            shareBtn.classList.remove("hidden");
+          }
+          openConfirm();
+        }
+
+        /* ---------- Reset after submit ----------
+           A submitted checklist always resets. Called only from the
+           confirmation screen's "Return to checklist" button, after the
+           summary (captured at send time) has been shown. Deletes the
+           submitted job's saved slot — and the last-worked-on pointer
+           when it points at that job — so reopening the same link
+           starts blank, then returns the form itself to a fresh state.
+           No URL prefill is re-applied: the submitted job is done. */
+        function resetForNextJob() {
+          if (currentKey) { storageRemove(currentKey); }
+          if (storageGet(SAVE_PREFIX + "last") === currentKey) {
+            storageRemove(SAVE_PREFIX + "last");
+          }
+          FIELD_IDS.forEach(function (id) { $(id).value = ""; });
+          $("f-date").value = todayISO();
+          setType("packout");
+          allBoxes().forEach(function (b) { b.checked = false; });
+          setEodAnswer("", true);
+          updateProgress();
+          currentKey = stateKey();
+          disarmReset();
+          $("save-status").textContent = "Auto-saves on this phone";
+        }
+
+        $("btn-return").addEventListener("click", function () {
+          confirmEl.classList.add("hidden");
+          if (wrapEl) {
+            wrapEl.style.overflow = "";
+            wrapEl.scrollTop = 0;
+          }
+          pendingShare = null;
+          if (shareBtn) {
+            shareBtn.classList.add("hidden");
+            resetShareButton();
+          }
+          clearPdfLinks();
+          hideError();
+          resetForNextJob();
+          toast("Checklist reset — ready for the next job.");
+        });
+
+        function fallbackSend(made, data, existingFile, shareErr) {
+          // Best-effort automatic download (works in a normal browser
+          // tab; restricted browsers may block a script-triggered
+          // download without any signal — that's why the confirmation
+          // also carries real Open/Download links the tech taps
+          // themselves). A detectable download error is surfaced, not
+          // swallowed. Keep the exact File built during Send to
+          // Supervisor for the Share button — no rebuild later.
+          try {
+            downloadBlob(made.blob, made.name);
+          } catch (dlErr) {
+            showError("The automatic PDF download failed; use Open PDF or Download PDF on the next screen", dlErr);
+          }
+          var file = existingFile || null;
+          if (!file) {
+            try { file = new File([made.blob], made.name, { type: "application/pdf" }); }
+            catch (e) { file = null; }
+          }
+          pendingShare = {
+            file: file,
+            data: data,
+            name: made.name,
+            subject: emailSubject(data)
+          };
+          setPdfLinks(made);
+          showReadyConfirmation(made, data, shareErr);
+        }
+
+        /* ---------- Fallback Share button ----------
+           Acts only on the tech's own tap. navigator.share is called
+           directly in this handler with the already-built File so the
+           user-gesture activation isn't lost — no rebuild, no awaits
+           before the call. */
+        if (shareBtn) {
+          shareBtn.addEventListener("click", function () {
+            if (!pendingShare) {
+              showError("Nothing to share yet", "No PDF is waiting — tap Send to Supervisor first, then Share.");
+              return;
+            }
+            if (!navigator.share) {
+              showError("Sharing isn't available in this browser",
+                "This browser doesn't provide the Web Share API (navigator.share is missing). Use Open PDF or Download PDF below instead.");
+              return;
+            }
+            hideError();
+            var fileToShare = pendingShare.file;
+            var subject = pendingShare.subject;
+            var data = pendingShare.data;
+            var canShareFiles = false;
+            try {
+              canShareFiles = !!(fileToShare && navigator.canShare &&
+                navigator.canShare({ files: [fileToShare] }));
+            } catch (e) { canShareFiles = false; }
+
+            var sharePromise;
+            try {
+              if (canShareFiles) {
+                sharePromise = navigator.share({
+                  files: [fileToShare],
+                  title: subject,
+                  text: subject + "\nSend to: " + BK_EMAIL
+                });
+              } else {
+                var prog = progressSummary(data);
+                var summaryLines = [
+                  subject,
+                  "",
+                  "Job number: " + (data.job || "—"),
+                  "Customer: " + (data.customer || "—"),
+                  "Job type: " + data.type,
+                  "Date: " + (data.date || "—"),
+                  "Progress: " + prog.done + " of " + prog.total + " items checked",
+                  "",
+                  "The checklist PDF (" + pendingShare.name + ") was downloaded to this phone — attach it from your downloads wherever you share this."
+                ];
+                sharePromise = navigator.share({
+                  title: subject,
+                  text: summaryLines.join("\n")
+                });
+              }
+            } catch (err) {
+              if (err && err.name === "AbortError") {
+                toast("Share cancelled");
+                return;
+              }
+              showError("Sharing failed — try Open PDF or Download PDF below", err);
+              return;
+            }
+            if (sharePromise && sharePromise.then) {
+              sharePromise.then(function () {
+                shareBtn.textContent = "Shared ✓";
+                shareBtn.disabled = true;
+              }, function (err) {
+                if (err && err.name === "AbortError") {
+                  toast("Share cancelled");
+                  return;
+                }
+                showError("Sharing failed — try Open PDF or Download PDF below", err);
+              });
+            }
+          });
+        }
+
+        if (emailBtn) {
+          emailBtn.addEventListener("click", function () {
+            try {
+              hideError();
+              clearPdfLinks();
+              if (shareBtn) {
+                shareBtn.classList.add("hidden");
+                resetShareButton();
+              }
+              pendingShare = null;
+              var made = makePdf();
+              var data = made.data;
+              var subject = emailSubject(data);
+
+              var file = null;
+              var canShareFiles = false;
+              try {
+                file = new File([made.blob], made.name, { type: "application/pdf" });
+                canShareFiles = !!(navigator.share && navigator.canShare &&
+                  navigator.canShare({ files: [file] }));
+              } catch (e) { canShareFiles = false; }
+
+              if (canShareFiles && file) {
+                toast("Pick Mail or Gmail to email the PDF to BK Packz.");
+                navigator.share({
+                  files: [file],
+                  title: subject,
+                  text: subject + "\nSend to: " + BK_EMAIL
+                }).then(function () {
+                  // The share completed — confirm it in-page.
+                  showSentConfirmation(data);
+                }, function (err) {
+                  // A cancelled share sheet is not a send: say so and
+                  // stay on the checklist, no confirmation. Any other
+                  // failure (e.g. the embedded browser claims to share
+                  // but can't) falls back to download + Share button
+                  // instead of leaving the tech with nothing.
+                  if (err && err.name === "AbortError") {
+                    toast("Share cancelled — checklist not sent yet");
+                    return;
+                  }
+                  fallbackSend(made, data, file, err);
+                });
+                return;
+              }
+
+              fallbackSend(made, data, file);
+            } catch (err) {
+              showError("Couldn't build the checklist PDF — nothing was sent", err);
+            }
+          });
+        }
+      })();
+    </script>
+
+    <!-- Installable web app: install prompt / iOS hint + service worker.
+         Kept separate from the checklist logic; touches nothing it uses
+         (no localStorage keys, no form state, no PDF/share code). -->
+    <script>
+      (function () {
+        "use strict";
+
+        var row = document.getElementById("install-row");
+        var btn = document.getElementById("btn-install");
+        var hint = document.getElementById("ios-hint");
+        if (!row || !btn || !hint) { return; }
+
+        function isStandalone() {
+          return (window.matchMedia &&
+            window.matchMedia("(display-mode: standalone)").matches) ||
+            window.navigator.standalone === true;
+        }
+        // Already installed / running from the home screen: stay silent.
+        if (isStandalone()) { return; }
+
+        var ua = window.navigator.userAgent || "";
+        var isIOS = /iphone|ipad|ipod/i.test(ua) ||
+          (window.navigator.platform === "MacIntel" &&
+            window.navigator.maxTouchPoints > 1);
+        if (isIOS) {
+          // Safari has no install prompt event — point at Share instead.
+          row.classList.remove("hidden");
+          hint.classList.remove("hidden");
+        }
+
+        var deferredPrompt = null;
+        window.addEventListener("beforeinstallprompt", function (e) {
+          e.preventDefault();
+          deferredPrompt = e;
+          row.classList.remove("hidden");
+          hint.classList.add("hidden");
+          btn.classList.remove("hidden");
+        });
+        btn.addEventListener("click", function () {
+          if (!deferredPrompt) { return; }
+          var promptEvent = deferredPrompt;
+          deferredPrompt = null;
+          btn.classList.add("hidden");
+          row.classList.add("hidden");
+          // Show the browser's own install prompt — this is the install
+          // event's method (bound and called indirectly), not a dialog.
+          var showInstallPrompt = promptEvent.prompt.bind(promptEvent);
+          showInstallPrompt();
+          if (promptEvent.userChoice) {
+            promptEvent.userChoice.then(function () { /* either way, stop offering */ }, function () {});
+          }
+        });
+        window.addEventListener("appinstalled", function () {
+          deferredPrompt = null;
+          row.classList.add("hidden");
+        });
+
+        /* Service worker: precaches the app shell (cache-first with
+           background revalidation — see assets/sw.js) so the app opens
+           and runs fully offline after one online visit.
+           Registration prefers a root-level sw.js: where the host
+           serves one (e.g. GitHub Pages), its scope covers the page and
+           offline reopening works end to end. This artifact serves only
+           index.html and assets/, so on the Muse host the root attempt
+           fails and we fall back to assets/sw.js — its scope is limited
+           to assets/ and cannot intercept the page there, but the shell
+           artwork is still cached and the page works the same online.
+           Any failure is ignored either way. */
+        if ("serviceWorker" in window.navigator) {
+          window.addEventListener("load", function () {
+            function registerAssetsWorker() {
+              try {
+                var reg = window.navigator.serviceWorker.register("assets/sw.js");
+                if (reg && reg.catch) { reg.catch(function () { /* shell cache unavailable */ }); }
+              } catch (e) { /* ignore */ }
+            }
+            try {
+              var rootReg = window.navigator.serviceWorker.register("sw.js");
+              if (rootReg && rootReg.catch) {
+                rootReg.catch(function () { registerAssetsWorker(); });
+              } else if (!rootReg) {
+                registerAssetsWorker();
+              }
+            } catch (e) {
+              registerAssetsWorker();
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
