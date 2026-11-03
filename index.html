@@ -100,6 +100,40 @@
          subtitle, driven by navigator.onLine + online/offline events.
          Offline turns gold to match the brand's "heads up" color. */
       .net-row { margin: 0 0 14px; }
+      /* Top controls: connection pill on one side, language selector
+         and Refresh button on the other — always visible at the top
+         without scrolling, wrapping neatly on narrow phones. */
+      .top-controls {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; flex-wrap: wrap; margin: 0 0 14px;
+      }
+      .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .lang-wrap { display: inline-flex; align-items: center; gap: 6px; }
+      .lang-label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.02em; }
+      .lang-select {
+        font: inherit; font-size: 14.5px; font-weight: 700;
+        color: var(--heading); background: var(--surface);
+        border: 1.5px solid var(--line); border-radius: 99px;
+        padding: 7px 10px; min-height: 40px; max-width: 168px; cursor: pointer;
+      }
+      .btn-refresh {
+        font: inherit; font-size: 14.5px; font-weight: 700;
+        color: var(--heading); background: var(--surface);
+        border: 1.5px solid var(--line); border-radius: 99px;
+        padding: 8px 16px; min-height: 40px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .btn-refresh svg { flex: 0 0 auto; }
+      .btn-refresh:active { transform: translateY(1px); }
+      /* Time-of-day fields (start / arrival / departure): plain time
+         inputs, not checklist items — they never affect the counters. */
+      .time-field { margin: 2px 0 12px; }
+      .time-field.after-list { margin: 12px 0 0; }
+      input[type="time"] { max-width: 220px; }
+      /* RTL (Hebrew): summary values align to the reading end, and
+         text inputs read right-to-left. Flex rows flip automatically. */
+      html[dir="rtl"] .confirm-summary .v { text-align: left; }
+      html[dir="rtl"] input[type="text"], html[dir="rtl"] textarea { text-align: right; }
       .net-pill {
         display: inline-flex;
         align-items: center;
@@ -169,7 +203,7 @@
         color: var(--ink-soft);
         margin-bottom: 5px;
       }
-      input[type="text"], input[type="date"], textarea {
+      input[type="text"], input[type="date"], input[type="time"], textarea {
         width: 100%;
         font: inherit;
         font-size: 17px;
@@ -201,7 +235,7 @@
         .card { padding: 12px; }
         .field { margin-bottom: 9px; }
         .seg button { min-height: 46px; padding: 10px 8px; }
-        input[type="text"], input[type="date"] { min-height: 46px; padding: 10px 12px; }
+        input[type="text"], input[type="date"], input[type="time"] { min-height: 46px; padding: 10px 12px; }
         .btn { min-height: 44px; padding: 8px 12px; font-size: 16px; }
       }
       /* Desktop / wider phones: all three actions fit on one row, so the
@@ -611,7 +645,7 @@
       @media print {
         body { height: auto; display: block; }
         .wrap { overflow: visible; }
-        .bar, .confirm-overlay, .net-row { display: none; }
+        .bar, .confirm-overlay, .net-row, .top-controls { display: none; }
       }
     </style>
   </head>
@@ -620,14 +654,32 @@
       <div class="brand-band">
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgUAAACbCAYAAADyb+gXAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ4IDc5LjE2NDAzNiwgMjAxOS8wOC8xMy0wMTowNjo1NyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDIxLjEgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkRCMjA1NjZCNDM5MjExRUI5NEUzRTk4RUNDNTFFNzgzIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkRCMjA1NjZDNDM5MjExRUI5NEUzRTk4RUNDNTFFNzgzIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6REIyMDU2Njk0MzkyMTFFQjk0RTNFOThFQ0M1MUU3ODMiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6REIyMDU2NkE0MzkyMTFFQjk0RTNFOThFQ0M1MUU3ODMiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7c0a/tAAA2mUlEQVR42uydB5xU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" alt="BK Packz logo" width="517" height="155" />
       </div>
-      <h1>Lead Tech Daily Checklist</h1>
-      <p class="sub">BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.</p>
+      <h1 data-i18n="title">Lead Tech Daily Checklist</h1>
+      <p class="sub" data-i18n="subtitle">BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.</p>
 
       <!-- Connection indicator: updated by script from navigator.onLine
            and the online/offline events. The checklist itself works
            either way — progress auto-saves on this phone offline too. -->
-      <div class="net-row">
+      <div class="top-controls">
         <span class="net-pill" id="net-pill" role="status"><span class="net-dot" aria-hidden="true"></span><span id="net-label">Online</span></span>
+        <div class="top-actions">
+          <label class="lang-wrap">
+            <span class="lang-label" data-i18n="language">Language</span>
+            <select class="lang-select" id="lang-select" aria-label="Language">
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="he">עברית</option>
+              <option value="zh">中文</option>
+              <option value="it">Italiano</option>
+              <option value="fr">Français</option>
+              <option value="pt">Português</option>
+            </select>
+          </label>
+          <button type="button" class="btn-refresh" id="btn-refresh">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12a8 8 0 11-2.34-5.66M20 4v4h-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-i18n="refresh">Refresh</span>
+          </button>
+        </div>
       </div>
 
       <!-- Install affordance: filled in by script only when install is
@@ -635,48 +687,52 @@
       <div class="install-row hidden" id="install-row">
         <button type="button" class="btn-install hidden" id="btn-install">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0l-4.2-4.2M12 14l4.2-4.2M4.5 19.5h15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Install app
+          <span data-i18n="installApp">Install app</span>
         </button>
         <span class="ios-hint hidden" id="ios-hint">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 15V4m0 0L8.2 7.8M12 4l3.8 3.8M6 11H5.5A1.5 1.5 0 004 12.5v7A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-7A1.5 1.5 0 0018.5 11H18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          To install: tap Share, then “Add to Home Screen.”
+          <span data-i18n="iosHint">To install: tap Share, then “Add to Home Screen.”</span>
         </span>
       </div>
 
       <!-- Job header -->
-      <section class="card" aria-label="Job details">
-        <h2>Job details</h2>
+      <section class="card" aria-label="Job details" id="job-details-card">
+        <h2 data-i18n="jobDetails">Job details</h2>
         <div class="field">
-          <label class="flabel" for="f-type">Job type</label>
-          <div class="seg" role="group" aria-label="Job type">
-            <button type="button" id="type-packout" aria-pressed="true">Packout</button>
-            <button type="button" id="type-packback" aria-pressed="false">Packback</button>
+          <label class="flabel" for="f-type" data-i18n="jobType">Job type</label>
+          <div class="seg" role="group" aria-label="Job type" id="type-seg">
+            <button type="button" id="type-packout" aria-pressed="true" data-i18n="packout">Packout</button>
+            <button type="button" id="type-packback" aria-pressed="false" data-i18n="packback">Packback</button>
           </div>
         </div>
         <div class="grid2">
           <div class="field">
-            <label class="flabel" for="f-date">Date</label>
+            <label class="flabel" for="f-date" data-i18n="date">Date</label>
             <input type="date" id="f-date" />
           </div>
           <div class="field">
-            <label class="flabel" for="f-job">Job number</label>
-            <input type="text" id="f-job" inputmode="text" placeholder="e.g. 737-26-00171" autocomplete="off" />
+            <label class="flabel" for="f-job" data-i18n="jobNumber">Job number</label>
+            <input type="text" id="f-job" inputmode="text" placeholder="e.g. 737-26-00171" autocomplete="off" data-i18n-ph="phJob" />
           </div>
         </div>
         <div class="field" style="margin-top:12px">
-          <label class="flabel" for="f-lead">Lead technician</label>
-          <input type="text" id="f-lead" placeholder="Your name" autocomplete="off" />
+          <label class="flabel" for="f-time-wh-start" data-i18n="tWarehouseStart">Warehouse start time</label>
+          <input type="time" id="f-time-wh-start" />
         </div>
         <div class="field">
-          <label class="flabel" for="f-customer">Customer name</label>
-          <input type="text" id="f-customer" placeholder="Customer name" autocomplete="off" list="customer-list" />
+          <label class="flabel" for="f-lead" data-i18n="leadTech">Lead technician</label>
+          <input type="text" id="f-lead" placeholder="Your name" autocomplete="off" data-i18n-ph="phLead" />
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-customer" data-i18n="customerName">Customer name</label>
+          <input type="text" id="f-customer" placeholder="Customer name" autocomplete="off" list="customer-list" data-i18n-ph="phCustomer" />
           <datalist id="customer-list"></datalist>
         </div>
       </section>
 
       <!-- 1. Job file & paperwork -->
       <section class="card" data-section="Job file &amp; paperwork">
-        <h2>1 · Job file &amp; paperwork</h2>
+        <h2 data-i18n="hPaperwork">1 · Job file &amp; paperwork</h2>
         <ul class="checks">
           <li><label class="check"><input type="checkbox" data-key="trash-auth" /><span class="txt">Trash / disposal authorization signed (if items are being disposed)</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="job-details-reviewed" /><span class="txt">Job details reviewed (address, scope, contact) in Proven Jobs</span></label></li>
@@ -687,10 +743,10 @@
 
       <!-- 2. Crew -->
       <section class="card" data-section="Crew">
-        <h2>2 · Crew</h2>
+        <h2 data-i18n="hCrew">2 · Crew</h2>
         <div class="field">
-          <label class="flabel" for="f-crew">Crew for today — names</label>
-          <input type="text" id="f-crew" placeholder="e.g. Jennifer P., Ben W., Alberto G." autocomplete="off" />
+          <label class="flabel" for="f-crew" data-i18n="crewNames">Crew for today — names</label>
+          <input type="text" id="f-crew" placeholder="e.g. Jennifer P., Ben W., Alberto G." autocomplete="off" data-i18n-ph="phCrew" />
         </div>
         <ul class="checks">
           <li><label class="check"><input type="checkbox" data-key="crew-address-time" /><span class="txt">Everyone has the address and start time</span></label></li>
@@ -699,7 +755,7 @@
 
       <!-- 3. Truck & transport -->
       <section class="card" data-section="Truck &amp; transport">
-        <h2>3 · Truck &amp; transport</h2>
+        <h2 data-i18n="hTruck">3 · Truck &amp; transport</h2>
         <ul class="checks">
           <li><label class="check"><input type="checkbox" data-key="truck-fueled" /><span class="txt">Truck fueled (WEX card in truck)</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="truck-checked" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
@@ -710,7 +766,7 @@
 
       <!-- 4. Supplies loaded (packout only: hidden on packbacks) -->
       <section class="card" id="supplies-section" data-section="Supplies loaded">
-        <h2>4 · Supplies loaded</h2>
+        <h2 id="supplies-heading" data-i18n="hSupplies">4 · Supplies loaded</h2>
         <ul class="checks">
           <li><label class="check"><input type="checkbox" data-key="boxes-sml" /><span class="txt">Boxes — small / medium / large</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="tape-dispensers" /><span class="txt">Tape and dispensers</span></label></li>
@@ -746,9 +802,9 @@
           <li><label class="check"><input type="checkbox" data-key="load-plan" /><span class="txt">Load plan reviewed with crew</span></label></li>
           <li id="initials-item" class="hidden">
             <div class="init-row">
-              <span class="txt">Confirm all insured items are loaded</span>
+              <span class="txt" id="initials-txt">Confirm all insured items are loaded</span>
               <span class="init-wrap">
-                <label class="ilabel" for="f-initials">Initials</label>
+                <label class="ilabel" for="f-initials" data-i18n="initials">Initials</label>
                 <input type="text" id="f-initials" class="init-input" maxlength="4" placeholder="—" autocomplete="off" autocapitalize="characters" aria-label="Lead technician initials confirming all insured items are loaded" />
               </span>
             </div>
@@ -760,6 +816,10 @@
       <!-- 7. During the day -->
       <section class="card" data-section="During the day">
         <h2 id="during-heading">6 · During the day</h2>
+        <div class="field time-field">
+          <label class="flabel" for="f-time-arrive" data-i18n="tJobsiteArrival">Jobsite arrival time</label>
+          <input type="time" id="f-time-arrive" />
+        </div>
         <ul class="checks">
           <li><label class="check"><input type="checkbox" data-key="walk-in-video" /><span class="txt">Walk-in video on LiveSwitch</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="contact-insured" /><span class="txt">Contact with insured</span></label></li>
@@ -771,6 +831,10 @@
           <li><label class="check"><input type="checkbox" data-key="secure-truck" /><span class="txt">Secure truck</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="clean-trash" /><span class="txt">Clean all trash before leaving</span></label></li>
         </ul>
+        <div class="field time-field after-list">
+          <label class="flabel" for="f-time-leave-site" data-i18n="tJobsiteDeparture">Jobsite departure time</label>
+          <input type="time" id="f-time-leave-site" />
+        </div>
       </section>
 
       <!-- 8. End of day -->
@@ -796,16 +860,20 @@
           <li><label class="check"><input type="checkbox" data-key="eod-warehouse-secured" /><span class="txt">Warehouse secured / doors locked</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="charge-batteries" /><span class="txt">Charge all tool batteries and scanning device</span></label></li>
         </ul>
+        <div class="field time-field after-list">
+          <label class="flabel" for="f-time-wh-depart" data-i18n="tWarehouseDeparture">Warehouse departure time</label>
+          <input type="time" id="f-time-wh-depart" />
+        </div>
       </section>
 
       <!-- Notes -->
       <section class="card">
-        <h2>Notes</h2>
+        <h2 data-i18n="hNotes">Notes</h2>
         <div class="field">
-          <label class="flabel" for="f-notes">Anything the office should know</label>
-          <textarea id="f-notes" placeholder="Missing supplies, job concerns, changes…"></textarea>
+          <label class="flabel" for="f-notes" data-i18n="notesLabel">Anything the office should know</label>
+          <textarea id="f-notes" placeholder="Missing supplies, job concerns, changes…" data-i18n-ph="phNotes"></textarea>
         </div>
-        <p class="progress-note">Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.</p>
+        <p class="progress-note" id="progress-note">Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.</p>
       </section>
 
       <div class="reset-row">
@@ -823,7 +891,7 @@
         </div>
         <div class="track"><div class="fill" id="p-fill"></div></div>
         <div class="actions">
-          <button type="button" class="btn btn-email" id="btn-email">Send to Supervisor</button>
+          <button type="button" class="btn btn-email" id="btn-email" data-i18n="send">Send to Supervisor</button>
         </div>
       </div>
     </div>
@@ -834,7 +902,7 @@
          actual error text and stay until dismissed. -->
     <div class="error-banner hidden" id="error-banner" role="alert">
       <span id="error-text"></span>
-      <button type="button" id="error-dismiss">Dismiss</button>
+      <button type="button" id="error-dismiss" data-i18n="dismiss">Dismiss</button>
     </div>
 
     <!-- Confirmation screen: shown in-page after Send to Supervisor.
@@ -847,18 +915,18 @@
         <h2 id="confirm-heading">Checklist sent to supervisor</h2>
         <p id="confirm-text"></p>
         <div class="confirm-summary">
-          <div class="row"><span class="k">Job number</span><span class="v" id="cs-job">—</span></div>
-          <div class="row"><span class="k">Customer</span><span class="v" id="cs-customer">—</span></div>
-          <div class="row"><span class="k">Job type</span><span class="v" id="cs-type">—</span></div>
-          <div class="row"><span class="k">Date</span><span class="v" id="cs-date">—</span></div>
-          <div class="row"><span class="k">Progress</span><span class="v" id="cs-progress">—</span></div>
-          <div class="row" id="cs-time-row"><span class="k">Submitted</span><span class="v" id="cs-time">—</span></div>
+          <div class="row"><span class="k" data-i18n="csJob">Job number</span><span class="v" id="cs-job">—</span></div>
+          <div class="row"><span class="k" data-i18n="csCustomer">Customer</span><span class="v" id="cs-customer">—</span></div>
+          <div class="row"><span class="k" data-i18n="csType">Job type</span><span class="v" id="cs-type">—</span></div>
+          <div class="row"><span class="k" data-i18n="csDate">Date</span><span class="v" id="cs-date">—</span></div>
+          <div class="row"><span class="k" data-i18n="csProgress">Progress</span><span class="v" id="cs-progress">—</span></div>
+          <div class="row" id="cs-time-row"><span class="k" data-i18n="csSubmitted">Submitted</span><span class="v" id="cs-time">—</span></div>
         </div>
         <div class="confirm-actions">
           <button type="button" class="btn btn-email hidden" id="btn-share">Share</button>
-          <a class="btn btn-ghost hidden" id="btn-open-pdf" href="#" target="_blank" rel="noopener">Open PDF</a>
-          <a class="btn btn-ghost hidden" id="btn-download-pdf" href="#" download>Download PDF</a>
-          <button type="button" class="btn btn-primary" id="btn-return">Return to checklist</button>
+          <a class="btn btn-ghost hidden" id="btn-open-pdf" href="#" target="_blank" rel="noopener" data-i18n="openPdf">Open PDF</a>
+          <a class="btn btn-ghost hidden" id="btn-download-pdf" href="#" download data-i18n="downloadPdf">Download PDF</a>
+          <button type="button" class="btn btn-primary" id="btn-return" data-i18n="returnBtn">Return to checklist</button>
         </div>
       </div>
     </div>
@@ -868,6 +936,126 @@
         "use strict";
 
         var $ = function (id) { return document.getElementById(id); };
+
+        /* ---------- Languages & Refresh ----------
+           Seven screen languages baked into the page (no network fetch,
+           fully offline). Translation is DISPLAY-ONLY: checklist state
+           is saved under stable per-item data-keys and field ids, so
+           switching language never touches a check, a field, a note,
+           or the counter. The completion PDF is ALWAYS built in English
+           (collect() reads the English strings from I18N.en, never the
+           translated on-screen text). The chosen language is a
+           device-level preference in its own localStorage slot,
+           separate from every per-job save slot. */
+        var I18N = {"en": {"title": "Lead Tech Daily Checklist", "subtitle": "BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.", "online": "Online", "offline": "Offline", "refresh": "Refresh", "language": "Language", "installApp": "Install app", "iosHint": "To install: tap Share, then “Add to Home Screen.”", "jobDetails": "Job details", "jobType": "Job type", "packout": "Packout", "packback": "Packback", "date": "Date", "jobNumber": "Job number", "leadTech": "Lead technician", "customerName": "Customer name", "hPaperwork": "1 · Job file & paperwork", "hCrew": "2 · Crew", "hTruck": "3 · Truck & transport", "hSupplies": "4 · Supplies loaded", "hPackbackChecks": "4 · Packback checks", "hBefore": "5 · Before leaving the warehouse", "hDuring": "6 · During the day", "hEod": "7 · End of day", "hNotes": "Notes", "crewNames": "Crew for today — names", "notesLabel": "Anything the office should know", "progressNote": "Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.", "initials": "Initials", "initialsConfirm": "Confirm all insured items are loaded", "initialsAria": "Lead technician initials confirming all insured items are loaded", "eodQuestion": "Were contents unloaded from truck?", "yes": "Yes", "no": "No", "send": "Send to Supervisor", "reset": "Start over — clear this job's saved progress", "resetArmed": "Tap again to clear everything", "saveAuto": "Auto-saves on this phone", "saved": "Saved ✓", "pickedUp": "Picked up where you left off", "allDone": "All done — ready to roll", "dismiss": "Dismiss", "share": "Share", "shared": "Shared ✓", "openPdf": "Open PDF", "downloadPdf": "Download PDF", "returnBtn": "Return to checklist", "csJob": "Job number", "csCustomer": "Customer", "csType": "Job type", "csDate": "Date", "csProgress": "Progress", "csSubmitted": "Submitted", "countTpl": "{done} of {total} checked", "itemsCheckedTpl": "{done} of {total} items checked", "headingSent": "✓ Checklist sent to supervisor", "textSent": "The checklist PDF was shared for this job. Tap “Return to checklist” to clear the form and start the next job.", "headingReady": "PDF ready to send", "textReadyTpl": "The checklist PDF ({name}) was generated on this phone, and a copy was sent to Downloads where this browser allows it. Tap Share to send it — pick Mail, Gmail, Messages, or another app. If Share doesn't work here, tap Open PDF and use the viewer's own share or save buttons, or Download PDF to save a copy you can attach. When you're done, tap “Return to checklist” to clear the form for the next job.", "offlineNote": " You're offline — you can still share; email sends when you're back in coverage.", "errNoteTpl": " Note: direct sharing failed on this phone ({err}) — use one of the options below instead.", "toastStartedFresh": "Started fresh — this job's saved progress was cleared.", "toastReset": "Checklist reset — ready for the next job.", "toastShareCancelled": "Share cancelled", "toastShareCancelledNotSent": "Share cancelled — checklist not sent yet", "toastPickMail": "Pick Mail or Gmail to email the PDF to BK Packz.", "errBuildPdf": "Couldn't build the checklist PDF — nothing was sent", "errShareFail": "Sharing failed — try Open PDF or Download PDF below", "errAutoDownload": "The automatic PDF download failed; use Open PDF or Download PDF on the next screen", "errNothing": "Nothing to share yet", "errNothingDetail": "No PDF is waiting — tap Send to Supervisor first, then Share.", "errNoShare": "Sharing isn't available in this browser", "phJob": "e.g. 737-26-00171", "phLead": "Your name", "phCustomer": "Customer name", "phCrew": "e.g. Jennifer P., Ben W., Alberto G.", "phNotes": "Missing supplies, job concerns, changes…", "items": {"trash-auth": "Trash / disposal authorization signed (if items are being disposed)", "job-details-reviewed": "Job details reviewed (address, scope, contact) in Proven Jobs", "customer-called": "Customer called — arrival window confirmed", "liveswitch-setup": "LiveSwitch project set up / phone charged for recording", "crew-address-time": "Everyone has the address and start time", "truck-fueled": "Truck fueled (WEX card in truck)", "truck-checked": "Truck checked: lights, tires, liftgate / ramp", "dollies-straps": "Dollies, hand truck, and straps loaded", "units-confirmed": "UNITS container delivery or pickup confirmed (if this job uses one)", "boxes-sml": "Boxes — small / medium / large", "tape-dispensers": "Tape and dispensers", "paper-bubble": "Packing paper and bubble wrap", "wardrobe-boxes": "Wardrobe boxes", "picture-mirror-boxes": "Picture / mirror boxes", "lamp-boxes": "Lamp boxes", "dish-pack-boxes": "Dish pack boxes", "furniture-pads": "Furniture pads / blankets", "shrink-wrap": "Shrink wrap", "labels-markers": "Labels and markers", "floor-protection": "Floor protection and corner protectors", "trash-bags": "Trash bags", "tool-kit": "Basic tool kit", "pull-list": "Pull list / inventory list in hand", "vault-numbers": "Vault or unit numbers confirmed", "items-verified": "Items verified against inventory before loading", "weather-checked": "Weather checked — rain supplies / plastic loaded if needed", "load-plan": "Load plan reviewed with crew", "warehouse-secured-leaving": "Warehouse secured / doors locked", "walk-in-video": "Walk-in video on LiveSwitch", "contact-insured": "Contact with insured", "photos-icat": "Photos on iCat", "secure-furniture": "Secure furniture", "walk-out-video": "Walk-out video on LiveSwitch", "walk-out-photos": "Walk-out photos on iCat (final day)", "organize-work-area": "Organize work area", "secure-truck": "Secure truck", "clean-trash": "Clean all trash before leaving", "eod-truck-checked": "Truck checked: lights, tires, liftgate / ramp", "driving-log": "Truck driver filled out driving log", "contents-vaults": "Contents transferred to vaults", "equipment-returned": "Equipment returned to its place", "liveswitch-uploaded": "LiveSwitch videos uploaded", "icat-uploaded": "iCat contents uploaded to cloud", "dock-bay": "Close and secure loading dock bay", "eod-warehouse-secured": "Warehouse secured / doors locked", "charge-batteries": "Charge all tool batteries and scanning device"}, "tWarehouseStart": "Warehouse start time", "tJobsiteArrival": "Jobsite arrival time", "tJobsiteDeparture": "Jobsite departure time", "tWarehouseDeparture": "Warehouse departure time"}, "es": {"title": "Lista diaria del técnico líder", "subtitle": "BK Packz — complete esto antes de salir del almacén y luego toque Enviar al supervisor para enviar el PDF al archivo del trabajo.", "online": "En línea", "offline": "Sin conexión", "refresh": "Actualizar", "language": "Idioma", "installApp": "Instalar la aplicación", "iosHint": "Para instalar: toque Compartir y luego «Añadir a pantalla de inicio».", "jobDetails": "Detalles del trabajo", "jobType": "Tipo de trabajo", "packout": "Empaque", "packback": "Entrega", "date": "Fecha", "jobNumber": "Número de trabajo", "leadTech": "Técnico líder", "customerName": "Nombre del cliente", "hPaperwork": "1 · Archivo y documentos del trabajo", "hCrew": "2 · Equipo", "hTruck": "3 · Camión y transporte", "hSupplies": "4 · Suministros cargados", "hPackbackChecks": "4 · Verificaciones de entrega", "hBefore": "5 · Antes de salir del almacén", "hDuring": "6 · Durante el día", "hEod": "7 · Fin del día", "hNotes": "Notas", "crewNames": "Equipo de hoy — nombres", "notesLabel": "Todo lo que la oficina debe saber", "progressNote": "Los artículos sin marcar también aparecen en el PDF, marcados como <strong>NO HECHO</strong>, para que la oficina vea lo que faltó.", "initials": "Iniciales", "initialsConfirm": "Confirmar que todos los artículos asegurados están cargados", "initialsAria": "Iniciales del técnico líder que confirma que todos los artículos asegurados están cargados", "eodQuestion": "¿Se descargó el contenido del camión?", "yes": "Sí", "no": "No", "send": "Enviar al supervisor", "reset": "Empezar de nuevo — borrar el progreso guardado de este trabajo", "resetArmed": "Toque de nuevo para borrar todo", "saveAuto": "Se guarda automáticamente en este teléfono", "saved": "Guardado ✓", "pickedUp": "Continuaste donde lo dejaste", "allDone": "Todo listo — a trabajar", "dismiss": "Descartar", "share": "Compartir", "shared": "Compartido ✓", "openPdf": "Abrir PDF", "downloadPdf": "Descargar PDF", "returnBtn": "Volver a la lista", "csJob": "Número de trabajo", "csCustomer": "Cliente", "csType": "Tipo de trabajo", "csDate": "Fecha", "csProgress": "Progreso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} artículos marcados", "headingSent": "✓ Lista enviada al supervisor", "textSent": "El PDF de la lista se compartió para este trabajo. Toque «Volver a la lista» para limpiar el formulario y empezar el siguiente trabajo.", "headingReady": "PDF listo para enviar", "textReadyTpl": "El PDF de la lista ({name}) se generó en este teléfono y se envió una copia a Descargas donde este navegador lo permite. Toque Compartir para enviarlo: elija Correo, Gmail, Mensajes u otra aplicación. Si Compartir no funciona aquí, toque Abrir PDF y use los botones de compartir o guardar del visor, o Descargar PDF para guardar una copia y adjuntarla. Cuando termine, toque «Volver a la lista» para limpiar el formulario para el siguiente trabajo.", "offlineNote": " Está sin conexión: aún puede compartir; el correo se enviará cuando recupere la cobertura.", "errNoteTpl": " Nota: el uso compartido directo falló en este teléfono ({err}); use una de las opciones siguientes.", "toastStartedFresh": "Empezamos de nuevo: se borró el progreso guardado de este trabajo.", "toastReset": "Lista reiniciada: lista para el siguiente trabajo.", "toastShareCancelled": "Compartir cancelado", "toastShareCancelledNotSent": "Compartir cancelado: la lista aún no se envió", "toastPickMail": "Elija Correo o Gmail para enviar el PDF a BK Packz.", "errBuildPdf": "No se pudo crear el PDF de la lista: no se envió nada", "errShareFail": "Error al compartir: pruebe Abrir PDF o Descargar PDF abajo", "errAutoDownload": "La descarga automática del PDF falló; use Abrir PDF o Descargar PDF en la siguiente pantalla", "errNothing": "Aún no hay nada para compartir", "errNothingDetail": "No hay ningún PDF en espera: primero toque Enviar al supervisor y luego Compartir.", "errNoShare": "Compartir no está disponible en este navegador", "phJob": "ej. 737-26-00171", "phLead": "Su nombre", "phCustomer": "Nombre del cliente", "phCrew": "ej. Jennifer P., Ben W., Alberto G.", "phNotes": "Suministros faltantes, problemas del trabajo, cambios…", "items": {"trash-auth": "Autorización de basura / desecho firmada (si se van a desechar artículos)", "job-details-reviewed": "Detalles del trabajo revisados (dirección, alcance, contacto) en Proven Jobs", "customer-called": "Cliente llamado — horario de llegada confirmado", "liveswitch-setup": "Proyecto de LiveSwitch creado / teléfono cargado para grabar", "crew-address-time": "Todos tienen la dirección y la hora de inicio", "truck-fueled": "Camión con combustible (tarjeta WEX en el camión)", "truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "dollies-straps": "Carretillas, carrito de mano y correas cargados", "units-confirmed": "Entrega o recogida del contenedor UNITS confirmada (si este trabajo usa uno)", "boxes-sml": "Cajas — pequeñas / medianas / grandes", "tape-dispensers": "Cinta adhesiva y dispensadores", "paper-bubble": "Papel de embalaje y plástico de burbujas", "wardrobe-boxes": "Cajas para ropa (guardarropa)", "picture-mirror-boxes": "Cajas para cuadros / espejos", "lamp-boxes": "Cajas para lámparas", "dish-pack-boxes": "Cajas para vajilla", "furniture-pads": "Protectores / mantas para muebles", "shrink-wrap": "Plástico retráctil (film)", "labels-markers": "Etiquetas y marcadores", "floor-protection": "Protección para pisos y protectores de esquinas", "trash-bags": "Bolsas de basura", "tool-kit": "Kit básico de herramientas", "pull-list": "Lista de extracción / inventario en mano", "vault-numbers": "Números de bóveda o unidad confirmados", "items-verified": "Artículos verificados contra el inventario antes de cargar", "weather-checked": "Clima revisado — suministros para lluvia / plástico cargados si es necesario", "load-plan": "Plan de carga revisado con el equipo", "warehouse-secured-leaving": "Almacén asegurado / puertas cerradas con llave", "walk-in-video": "Video de entrada en LiveSwitch", "contact-insured": "Contacto con el asegurado", "photos-icat": "Fotos en iCat", "secure-furniture": "Asegurar los muebles", "walk-out-video": "Video de salida en LiveSwitch", "walk-out-photos": "Fotos de salida en iCat (último día)", "organize-work-area": "Organizar el área de trabajo", "secure-truck": "Asegurar el camión", "clean-trash": "Limpiar toda la basura antes de salir", "eod-truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "driving-log": "El conductor del camión completó el registro de manejo", "contents-vaults": "Contenido trasladado a las bóvedas", "equipment-returned": "Equipo devuelto a su lugar", "liveswitch-uploaded": "Videos de LiveSwitch subidos", "icat-uploaded": "Contenido de iCat subido a la nube", "dock-bay": "Cerrar y asegurar el muelle de carga", "eod-warehouse-secured": "Almacén asegurado / puertas cerradas con llave", "charge-batteries": "Cargar todas las baterías de herramientas y el dispositivo de escaneo"}, "tWarehouseStart": "Hora de inicio en el almacén", "tJobsiteArrival": "Hora de llegada al lugar de trabajo", "tJobsiteDeparture": "Hora de salida del lugar de trabajo", "tWarehouseDeparture": "Hora de salida del almacén"}, "he": {"title": "רשימת הבדיקות היומית של הטכנאי הראשי", "subtitle": "BK Packz — מלאו זאת לפני היציאה מהמחסן, ולאחר מכן הקישו על שליחה למפקח כדי לשלוח את ה-PDF לתיק העבודה.", "online": "מחובר", "offline": "לא מחובר", "refresh": "רענון", "language": "שפה", "installApp": "התקנת האפליקציה", "iosHint": "להתקנה: הקישו על שיתוף ולאחר מכן על “הוספה למסך הבית”.", "jobDetails": "פרטי העבודה", "jobType": "סוג העבודה", "packout": "אריזה והוצאה", "packback": "החזרה ופריקה", "date": "תאריך", "jobNumber": "מספר עבודה", "leadTech": "טכנאי ראשי", "customerName": "שם הלקוח", "hPaperwork": "1 · תיק עבודה ומסמכים", "hCrew": "2 · צוות", "hTruck": "3 · משאית והובלה", "hSupplies": "4 · ציוד שנטען", "hPackbackChecks": "4 · בדיקות החזרה", "hBefore": "5 · לפני היציאה מהמחסן", "hDuring": "6 · במהלך היום", "hEod": "7 · סוף היום", "hNotes": "הערות", "crewNames": "צוות היום — שמות", "notesLabel": "כל מה שהמשרד צריך לדעת", "progressNote": "פריטים שלא סומנו עדיין מופיעים ב-PDF ומסומנים כ<strong>לא בוצע</strong> — כדי שהמשרד יראה מה הוחמץ.", "initials": "ראשי תיבות", "initialsConfirm": "לאשר שכל הפריטים המבוטחים נטענו", "initialsAria": "ראשי התיבות של הטכנאי הראשי המאשר שכל הפריטים המבוטחים נטענו", "eodQuestion": "האם התכולה נפרקה מהמשאית?", "yes": "כן", "no": "לא", "send": "שליחה למפקח", "reset": "התחלה מחדש — מחיקת ההתקדמות השמורה של עבודה זו", "resetArmed": "הקישו שוב כדי למחוק הכול", "saveAuto": "נשמר אוטומטית בטלפון זה", "saved": "נשמר ✓", "pickedUp": "המשכתם מהמקום שבו הפסקתם", "allDone": "הכול בוצע — מוכנים לצאת", "dismiss": "סגירה", "share": "שיתוף", "shared": "שותף ✓", "openPdf": "פתיחת PDF", "downloadPdf": "הורדת PDF", "returnBtn": "חזרה לרשימה", "csJob": "מספר עבודה", "csCustomer": "לקוח", "csType": "סוג העבודה", "csDate": "תאריך", "csProgress": "התקדמות", "csSubmitted": "נשלח", "countTpl": "{done} מתוך {total} סומנו", "itemsCheckedTpl": "{done} מתוך {total} פריטים סומנו", "headingSent": "✓ הרשימה נשלחה למפקח", "textSent": "קובץ ה-PDF של הרשימה שותף עבור עבודה זו. הקישו על “חזרה לרשימה” כדי לנקות את הטופס ולהתחיל את העבודה הבאה.", "headingReady": "ה-PDF מוכן לשליחה", "textReadyTpl": "קובץ ה-PDF של הרשימה ({name}) נוצר בטלפון זה, עותק נשלח להורדות היכן שהדפדפן מאפשר זאת. הקישו על שיתוף כדי לשלוח אותו — בחרו דואר, Gmail, הודעות או אפליקציה אחרת. אם השיתוף לא עובד כאן, הקישו על פתיחת PDF והשתמשו בלחצני השיתוף או השמירה של המציג, או על הורדת PDF כדי לשמור עותק לצירוף. כשתסיימו, הקישו על “חזרה לרשימה” כדי לנקות את הטופס לעבודה הבאה.", "offlineNote": " אתם במצב לא מחובר — עדיין ניתן לשתף; הדוא״ל יישלח כשתחזור הקליטה.", "errNoteTpl": " הערה: השיתוף הישיר נכשל בטלפון זה ({err}) — השתמשו באחת האפשרויות שלהלן.", "toastStartedFresh": "התחלנו מחדש — ההתקדמות השמורה של עבודה זו נמחקה.", "toastReset": "הרשימה אופסה — מוכנים לעבודה הבאה.", "toastShareCancelled": "השיתוף בוטל", "toastShareCancelledNotSent": "השיתוף בוטל — הרשימה עדיין לא נשלחה", "toastPickMail": "בחרו דואר או Gmail כדי לשלוח את ה-PDF ל-BK Packz.", "errBuildPdf": "לא ניתן היה ליצור את PDF של הרשימה — דבר לא נשלח", "errShareFail": "השיתוף נכשל — נסו פתיחת PDF או הורדת PDF שלהלן", "errAutoDownload": "ההורדה האוטומטית של ה-PDF נכשלה; השתמשו בפתיחת PDF או בהורדת PDF במסך הבא", "errNothing": "אין עדיין מה לשתף", "errNothingDetail": "אין PDF ממתין — הקישו תחילה על שליחה למפקח ולאחר מכן על שיתוף.", "errNoShare": "השיתוף אינו זמין בדפדפן זה", "phJob": "לדוגמה 737-26-00171", "phLead": "שמך", "phCustomer": "שם הלקוח", "phCrew": "לדוגמה Jennifer P., Ben W., Alberto G.", "phNotes": "ציוד חסר, בעיות בעבודה, שינויים…", "items": {"trash-auth": "אישור פינוי / השלכת אשפה חתום (אם מפנים פריטים)", "job-details-reviewed": "פרטי העבודה נבדקו (כתובת, היקף, איש קשר) ב-Proven Jobs", "customer-called": "הלקוח קיבל שיחה — חלון ההגעה אושר", "liveswitch-setup": "פרויקט LiveSwitch הוקם / הטלפון טעון להקלטה", "crew-address-time": "לכולם יש את הכתובת ושעת ההתחלה", "truck-fueled": "המשאית מתודלקת (כרטיס WEX במשאית)", "truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "dollies-straps": "עגלות, עגלת יד ורצועות נטענו", "units-confirmed": "משלוח או איסוף של מכולת UNITS אושר (אם העבודה משתמשת באחת)", "boxes-sml": "קופסאות — קטנות / בינוניות / גדולות", "tape-dispensers": "סרט הדבקה ומתקני הדבקה", "paper-bubble": "נייר אריזה וניילון בועות", "wardrobe-boxes": "קופסאות ארון בגדים", "picture-mirror-boxes": "קופסאות לתמונות / מראות", "lamp-boxes": "קופסאות למנורות", "dish-pack-boxes": "קופסאות לכלי אוכל", "furniture-pads": "כריות / שמיכות לרהיטים", "shrink-wrap": "ניילון נצמד", "labels-markers": "מדבקות וטושים", "floor-protection": "הגנה לרצפה ומגיני פינות", "trash-bags": "שקיות אשפה", "tool-kit": "ערכת כלים בסיסית", "pull-list": "רשימת משיכה / מלאי ביד", "vault-numbers": "מספרי כספות או יחידות אושרו", "items-verified": "הפריטים אומתו מול המלאי לפני הטעינה", "weather-checked": "מזג האוויר נבדק — ציוד לגשם / פלסטיק נטען במידת הצורך", "load-plan": "תוכנית ההטענה נבדקה עם הצוות", "warehouse-secured-leaving": "המחסן מאובטח / הדלתות נעולות", "walk-in-video": "סרטון כניסה ב-LiveSwitch", "contact-insured": "קשר עם המבוטח", "photos-icat": "תמונות ב-iCat", "secure-furniture": "לאבטח את הרהיטים", "walk-out-video": "סרטון יציאה ב-LiveSwitch", "walk-out-photos": "תמונות יציאה ב-iCat (יום אחרון)", "organize-work-area": "לארגן את אזור העבודה", "secure-truck": "לאבטח את המשאית", "clean-trash": "לנקות את כל האשפה לפני היציאה", "eod-truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "driving-log": "נהג המשאית מילא יומן נהיגה", "contents-vaults": "התכולה הועברה לכספות", "equipment-returned": "הציוד הוחזר למקומו", "liveswitch-uploaded": "סרטוני LiveSwitch הועלו", "icat-uploaded": "תכולת iCat הועלתה לענן", "dock-bay": "לסגור ולאבטח את רציף הטעינה", "eod-warehouse-secured": "המחסן מאובטח / הדלתות נעולות", "charge-batteries": "לטעון את כל סוללות הכלים ומכשיר הסריקה"}, "tWarehouseStart": "שעת התחלה במחסן", "tJobsiteArrival": "שעת הגעה לאתר העבודה", "tJobsiteDeparture": "שעת יציאה מאתר העבודה", "tWarehouseDeparture": "שעת יציאה מהמחסן"}, "zh": {"title": "领队技术员每日检查表", "subtitle": "BK Packz — 离开仓库前填写此表，然后点击“发送给主管”，将 PDF 发送到工作档案中。", "online": "在线", "offline": "离线", "refresh": "刷新", "language": "语言", "installApp": "安装应用", "iosHint": "安装方法：点击“共享”，然后点击“添加到主屏幕”。", "jobDetails": "工作详情", "jobType": "工作类型", "packout": "打包出库", "packback": "送回交付", "date": "日期", "jobNumber": "工作编号", "leadTech": "领队技术员", "customerName": "客户姓名", "hPaperwork": "1 · 工作档案与文件", "hCrew": "2 · 团队", "hTruck": "3 · 卡车与运输", "hSupplies": "4 · 已装载用品", "hPackbackChecks": "4 · 送回检查", "hBefore": "5 · 离开仓库前", "hDuring": "6 · 白天工作中", "hEod": "7 · 当天结束", "hNotes": "备注", "crewNames": "今天的团队 — 姓名", "notesLabel": "办公室需要知道的事项", "progressNote": "未勾选的项目仍会出现在 PDF 中，并标记为<strong>未完成</strong>，以便办公室了解遗漏内容。", "initials": "姓名缩写", "initialsConfirm": "确认所有受保物品均已装车", "initialsAria": "领队技术员姓名缩写，确认所有受保物品均已装车", "eodQuestion": "货物是否已从卡车上卸下？", "yes": "是", "no": "否", "send": "发送给主管", "reset": "重新开始 — 清除此工作的已保存进度", "resetArmed": "再次点击即可清除全部内容", "saveAuto": "自动保存在此手机上", "saved": "已保存 ✓", "pickedUp": "已恢复到上次离开的位置", "allDone": "全部完成 — 可以出发了", "dismiss": "关闭", "share": "共享", "shared": "已共享 ✓", "openPdf": "打开 PDF", "downloadPdf": "下载 PDF", "returnBtn": "返回检查表", "csJob": "工作编号", "csCustomer": "客户", "csType": "工作类型", "csDate": "日期", "csProgress": "进度", "csSubmitted": "已提交", "countTpl": "已勾选 {done}/{total}", "itemsCheckedTpl": "已勾选 {done}/{total} 项", "headingSent": "✓ 检查表已发送给主管", "textSent": "此工作的检查表 PDF 已共享。点击“返回检查表”清除表单并开始下一项工作。", "headingReady": "PDF 已准备好发送", "textReadyTpl": "检查表 PDF（{name}）已在此手机上生成，并在浏览器允许的情况下发送了一份副本到下载文件夹。点击“共享”发送 — 选择邮件、Gmail、信息或其他应用。如果此处无法共享，请点击“打开 PDF”并使用查看器自带的共享或保存按钮，或点击“下载 PDF”保存一份副本以便附加。完成后，点击“返回检查表”清除表单，以便进行下一项工作。", "offlineNote": " 您当前处于离线状态 — 仍可共享；电子邮件将在恢复信号后发送。", "errNoteTpl": " 注意：此手机上的直接共享失败（{err}）— 请改用下面的选项之一。", "toastStartedFresh": "已重新开始 — 此工作的已保存进度已清除。", "toastReset": "检查表已重置 — 可以开始下一项工作了。", "toastShareCancelled": "共享已取消", "toastShareCancelledNotSent": "共享已取消 — 检查表尚未发送", "toastPickMail": "请选择邮件或 Gmail，将 PDF 通过电子邮件发送给 BK Packz。", "errBuildPdf": "无法生成检查表 PDF — 未发送任何内容", "errShareFail": "共享失败 — 请尝试下面的打开 PDF 或下载 PDF", "errAutoDownload": "PDF 自动下载失败；请在下一个屏幕上使用打开 PDF 或下载 PDF", "errNothing": "尚无可共享的内容", "errNothingDetail": "没有等待中的 PDF — 请先点击发送给主管，然后点击共享。", "errNoShare": "此浏览器不支持共享", "phJob": "例如 737-26-00171", "phLead": "您的姓名", "phCustomer": "客户姓名", "phCrew": "例如 Jennifer P.、Ben W.、Alberto G.", "phNotes": "缺少的用品、工作问题、变更…", "items": {"trash-auth": "垃圾/废弃物处理授权已签署（如需处理物品）", "job-details-reviewed": "已在 Proven Jobs 中查看工作详情（地址、范围、联系人）", "customer-called": "已致电客户 — 已确认到达时间段", "liveswitch-setup": "LiveSwitch 项目已设置 / 手机已充电以便录像", "crew-address-time": "每个人都有地址和开始时间", "truck-fueled": "卡车已加油（WEX 卡在车内）", "truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "dollies-straps": "推车、手推车和绑带已装车", "units-confirmed": "UNITS 集装箱送达或取回已确认（如本工作使用）", "boxes-sml": "箱子 — 小号 / 中号 / 大号", "tape-dispensers": "胶带和胶带器", "paper-bubble": "包装纸和气泡膜", "wardrobe-boxes": "衣柜箱", "picture-mirror-boxes": "画框 / 镜子箱", "lamp-boxes": "灯具箱", "dish-pack-boxes": "餐具箱", "furniture-pads": "家具垫 / 毯子", "shrink-wrap": "收缩膜", "labels-markers": "标签和记号笔", "floor-protection": "地面保护和护角", "trash-bags": "垃圾袋", "tool-kit": "基本工具包", "pull-list": "提货清单 / 库存清单已带齐", "vault-numbers": "库房或单元编号已确认", "items-verified": "装车前已按库存核对物品", "weather-checked": "已查看天气 — 如有需要已装载防雨用品 / 塑料布", "load-plan": "已与团队查看装载计划", "warehouse-secured-leaving": "仓库已锁好 / 大门已锁", "walk-in-video": "LiveSwitch 入场视频", "contact-insured": "已与被保险人联系", "photos-icat": "iCat 照片", "secure-furniture": "固定家具", "walk-out-video": "LiveSwitch 离场视频", "walk-out-photos": "iCat 离场照片（最后一天）", "organize-work-area": "整理工作区域", "secure-truck": "锁好卡车", "clean-trash": "离开前清理所有垃圾", "eod-truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "driving-log": "卡车司机已填写驾驶日志", "contents-vaults": "货物已转移到库房", "equipment-returned": "设备已归还到原位", "liveswitch-uploaded": "LiveSwitch 视频已上传", "icat-uploaded": "iCat 内容已上传到云端", "dock-bay": "关闭并锁好装卸区", "eod-warehouse-secured": "仓库已锁好 / 大门已锁", "charge-batteries": "为所有工具电池和扫描设备充电"}, "tWarehouseStart": "仓库开始时间", "tJobsiteArrival": "到达工作现场时间", "tJobsiteDeparture": "离开工作现场时间", "tWarehouseDeparture": "离开仓库时间"}, "it": {"title": "Checklist giornaliera del tecnico capo", "subtitle": "BK Packz — compilala prima di lasciare il magazzino, poi tocca Invia al supervisore per inviare il PDF alla pratica del lavoro.", "online": "Online", "offline": "Offline", "refresh": "Aggiorna", "language": "Lingua", "installApp": "Installa l'app", "iosHint": "Per installare: tocca Condividi, poi “Aggiungi alla schermata Home”.", "jobDetails": "Dettagli del lavoro", "jobType": "Tipo di lavoro", "packout": "Imballaggio", "packback": "Riconsegna", "date": "Data", "jobNumber": "Numero del lavoro", "leadTech": "Tecnico capo", "customerName": "Nome del cliente", "hPaperwork": "1 · Pratica e documenti del lavoro", "hCrew": "2 · Squadra", "hTruck": "3 · Camion e trasporto", "hSupplies": "4 · Materiali caricati", "hPackbackChecks": "4 · Controlli di riconsegna", "hBefore": "5 · Prima di lasciare il magazzino", "hDuring": "6 · Durante la giornata", "hEod": "7 · Fine giornata", "hNotes": "Note", "crewNames": "Squadra di oggi — nomi", "notesLabel": "Tutto ciò che l'ufficio deve sapere", "progressNote": "Gli elementi non spuntati compaiono comunque nel PDF, contrassegnati come <strong>NON FATTO</strong>, così l'ufficio può vedere cosa è mancato.", "initials": "Iniziali", "initialsConfirm": "Confermare che tutti gli articoli assicurati sono stati caricati", "initialsAria": "Iniziali del tecnico capo che conferma che tutti gli articoli assicurati sono stati caricati", "eodQuestion": "Il contenuto è stato scaricato dal camion?", "yes": "Sì", "no": "No", "send": "Invia al supervisore", "reset": "Ricomincia — cancella l'avanzamento salvato di questo lavoro", "resetArmed": "Tocca di nuovo per cancellare tutto", "saveAuto": "Salvataggio automatico su questo telefono", "saved": "Salvato ✓", "pickedUp": "Hai ripreso da dove avevi lasciato", "allDone": "Tutto fatto — pronti a partire", "dismiss": "Chiudi", "share": "Condividi", "shared": "Condiviso ✓", "openPdf": "Apri PDF", "downloadPdf": "Scarica PDF", "returnBtn": "Torna alla checklist", "csJob": "Numero del lavoro", "csCustomer": "Cliente", "csType": "Tipo di lavoro", "csDate": "Data", "csProgress": "Avanzamento", "csSubmitted": "Inviato", "countTpl": "{done} di {total} spuntati", "itemsCheckedTpl": "{done} di {total} elementi spuntati", "headingSent": "✓ Checklist inviata al supervisore", "textSent": "Il PDF della checklist è stato condiviso per questo lavoro. Tocca “Torna alla checklist” per cancellare il modulo e iniziare il lavoro successivo.", "headingReady": "PDF pronto da inviare", "textReadyTpl": "Il PDF della checklist ({name}) è stato generato su questo telefono e una copia è stata inviata ai Download dove questo browser lo consente. Tocca Condividi per inviarlo: scegli Mail, Gmail, Messaggi o un'altra app. Se Condividi non funziona qui, tocca Apri PDF e usa i pulsanti di condivisione o salvataggio del visualizzatore, oppure Scarica PDF per salvare una copia da allegare. Al termine, tocca “Torna alla checklist” per cancellare il modulo per il lavoro successivo.", "offlineNote": " Sei offline: puoi comunque condividere; l'e-mail verrà inviata quando tornerà la copertura.", "errNoteTpl": " Nota: la condivisione diretta non è riuscita su questo telefono ({err}); usa una delle opzioni seguenti.", "toastStartedFresh": "Ricomiciato da capo: l'avanzamento salvato di questo lavoro è stato cancellato.", "toastReset": "Checklist reimpostata: pronti per il lavoro successivo.", "toastShareCancelled": "Condivisione annullata", "toastShareCancelledNotSent": "Condivisione annullata: checklist non ancora inviata", "toastPickMail": "Scegli Mail o Gmail per inviare il PDF a BK Packz via e-mail.", "errBuildPdf": "Impossibile creare il PDF della checklist: non è stato inviato nulla", "errShareFail": "Condivisione non riuscita: prova Apri PDF o Scarica PDF qui sotto", "errAutoDownload": "Il download automatico del PDF non è riuscito; usa Apri PDF o Scarica PDF nella schermata successiva", "errNothing": "Ancora nulla da condividere", "errNothingDetail": "Nessun PDF in attesa: tocca prima Invia al supervisore, poi Condividi.", "errNoShare": "La condivisione non è disponibile in questo browser", "phJob": "es. 737-26-00171", "phLead": "Il tuo nome", "phCustomer": "Nome del cliente", "phCrew": "es. Jennifer P., Ben W., Alberto G.", "phNotes": "Materiali mancanti, problemi del lavoro, modifiche…", "items": {"trash-auth": "Autorizzazione allo smaltimento / rifiuti firmata (se vengono smaltiti articoli)", "job-details-reviewed": "Dettagli del lavoro verificati (indirizzo, ambito, contatto) in Proven Jobs", "customer-called": "Cliente chiamato — fascia di arrivo confermata", "liveswitch-setup": "Progetto LiveSwitch creato / telefono carico per registrare", "crew-address-time": "Tutti hanno l'indirizzo e l'orario di inizio", "truck-fueled": "Camion rifornito (carta WEX nel camion)", "truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "dollies-straps": "Carrelli, carrello a mano e cinghie caricati", "units-confirmed": "Consegna o ritiro del container UNITS confermato (se questo lavoro ne usa uno)", "boxes-sml": "Scatole — piccole / medie / grandi", "tape-dispensers": "Nastro adesivo e dispenser", "paper-bubble": "Carta da imballaggio e pluriball", "wardrobe-boxes": "Scatole guardaroba", "picture-mirror-boxes": "Scatole per quadri / specchi", "lamp-boxes": "Scatole per lampade", "dish-pack-boxes": "Scatole per stoviglie", "furniture-pads": "Coperte / protezioni per mobili", "shrink-wrap": "Pellicola estensibile", "labels-markers": "Etichette e pennarelli", "floor-protection": "Protezione per pavimenti e paraspigoli", "trash-bags": "Sacchi per la spazzatura", "tool-kit": "Kit di attrezzi di base", "pull-list": "Elenco di prelievo / inventario a portata di mano", "vault-numbers": "Numeri di caveau o unità confermati", "items-verified": "Articoli verificati rispetto all'inventario prima del carico", "weather-checked": "Meteo controllato — materiali per la pioggia / plastica caricati se necessario", "load-plan": "Piano di carico verificato con la squadra", "warehouse-secured-leaving": "Magazzino messo in sicurezza / porte chiuse a chiave", "walk-in-video": "Video di ingresso su LiveSwitch", "contact-insured": "Contatto con l'assicurato", "photos-icat": "Foto su iCat", "secure-furniture": "Mettere in sicurezza i mobili", "walk-out-video": "Video di uscita su LiveSwitch", "walk-out-photos": "Foto di uscita su iCat (ultimo giorno)", "organize-work-area": "Organizzare l'area di lavoro", "secure-truck": "Mettere in sicurezza il camion", "clean-trash": "Pulire tutta la spazzatura prima di partire", "eod-truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "driving-log": "L'autista del camion ha compilato il registro di guida", "contents-vaults": "Contenuto trasferito nei caveau", "equipment-returned": "Attrezzatura riportata al suo posto", "liveswitch-uploaded": "Video LiveSwitch caricati", "icat-uploaded": "Contenuti iCat caricati sul cloud", "dock-bay": "Chiudere e mettere in sicurezza la banchina di carico", "eod-warehouse-secured": "Magazzino messo in sicurezza / porte chiuse a chiave", "charge-batteries": "Caricare tutte le batterie degli utensili e il dispositivo di scansione"}, "tWarehouseStart": "Orario di inizio in magazzino", "tJobsiteArrival": "Orario di arrivo in cantiere", "tJobsiteDeparture": "Orario di partenza dal cantiere", "tWarehouseDeparture": "Orario di partenza dal magazzino"}, "fr": {"title": "Liste de contrôle quotidienne du technicien chef", "subtitle": "BK Packz — remplissez-la avant de quitter l'entrepôt, puis appuyez sur Envoyer au superviseur pour envoyer le PDF au dossier du chantier.", "online": "En ligne", "offline": "Hors ligne", "refresh": "Actualiser", "language": "Langue", "installApp": "Installer l'application", "iosHint": "Pour installer : appuyez sur Partager, puis sur « Ajouter à l'écran d'accueil ».", "jobDetails": "Détails du chantier", "jobType": "Type de chantier", "packout": "Emballage", "packback": "Retour / livraison", "date": "Date", "jobNumber": "Numéro de chantier", "leadTech": "Technicien chef", "customerName": "Nom du client", "hPaperwork": "1 · Dossier et documents du chantier", "hCrew": "2 · Équipe", "hTruck": "3 · Camion et transport", "hSupplies": "4 · Fournitures chargées", "hPackbackChecks": "4 · Vérifications de retour", "hBefore": "5 · Avant de quitter l'entrepôt", "hDuring": "6 · Pendant la journée", "hEod": "7 · Fin de journée", "hNotes": "Remarques", "crewNames": "Équipe du jour — noms", "notesLabel": "Tout ce que le bureau doit savoir", "progressNote": "Les éléments non cochés apparaissent quand même dans le PDF, marqués <strong>NON FAIT</strong>, pour que le bureau voie ce qui a été manqué.", "initials": "Initiales", "initialsConfirm": "Confirmer que tous les articles assurés sont chargés", "initialsAria": "Initiales du technicien chef confirmant que tous les articles assurés sont chargés", "eodQuestion": "Le contenu a-t-il été déchargé du camion ?", "yes": "Oui", "no": "Non", "send": "Envoyer au superviseur", "reset": "Recommencer — effacer la progression enregistrée de ce chantier", "resetArmed": "Appuyez à nouveau pour tout effacer", "saveAuto": "Enregistrement automatique sur ce téléphone", "saved": "Enregistré ✓", "pickedUp": "Vous avez repris là où vous vous étiez arrêté", "allDone": "Tout est fait — prêt à partir", "dismiss": "Fermer", "share": "Partager", "shared": "Partagé ✓", "openPdf": "Ouvrir le PDF", "downloadPdf": "Télécharger le PDF", "returnBtn": "Retour à la liste", "csJob": "Numéro de chantier", "csCustomer": "Client", "csType": "Type de chantier", "csDate": "Date", "csProgress": "Progression", "csSubmitted": "Envoyé", "countTpl": "{done} sur {total} cochés", "itemsCheckedTpl": "{done} sur {total} éléments cochés", "headingSent": "✓ Liste envoyée au superviseur", "textSent": "Le PDF de la liste a été partagé pour ce chantier. Appuyez sur « Retour à la liste » pour effacer le formulaire et commencer le chantier suivant.", "headingReady": "PDF prêt à envoyer", "textReadyTpl": "Le PDF de la liste ({name}) a été généré sur ce téléphone, et une copie a été envoyée dans les Téléchargements là où ce navigateur le permet. Appuyez sur Partager pour l'envoyer : choisissez Mail, Gmail, Messages ou une autre application. Si Partager ne fonctionne pas ici, appuyez sur Ouvrir le PDF et utilisez les boutons de partage ou d'enregistrement du lecteur, ou sur Télécharger le PDF pour enregistrer une copie à joindre. Lorsque vous avez terminé, appuyez sur « Retour à la liste » pour effacer le formulaire pour le chantier suivant.", "offlineNote": " Vous êtes hors ligne : vous pouvez quand même partager ; l'e-mail partira dès le retour de la couverture.", "errNoteTpl": " Remarque : le partage direct a échoué sur ce téléphone ({err}) ; utilisez l'une des options ci-dessous.", "toastStartedFresh": "Recommencé à zéro : la progression enregistrée de ce chantier a été effacée.", "toastReset": "Liste réinitialisée : prêt pour le chantier suivant.", "toastShareCancelled": "Partage annulé", "toastShareCancelledNotSent": "Partage annulé : liste pas encore envoyée", "toastPickMail": "Choisissez Mail ou Gmail pour envoyer le PDF à BK Packz par e-mail.", "errBuildPdf": "Impossible de créer le PDF de la liste : rien n'a été envoyé", "errShareFail": "Échec du partage : essayez Ouvrir le PDF ou Télécharger le PDF ci-dessous", "errAutoDownload": "Le téléchargement automatique du PDF a échoué ; utilisez Ouvrir le PDF ou Télécharger le PDF sur l'écran suivant", "errNothing": "Rien à partager pour le moment", "errNothingDetail": "Aucun PDF en attente : appuyez d'abord sur Envoyer au superviseur, puis sur Partager.", "errNoShare": "Le partage n'est pas disponible dans ce navigateur", "phJob": "ex. 737-26-00171", "phLead": "Votre nom", "phCustomer": "Nom du client", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Fournitures manquantes, problèmes du chantier, changements…", "items": {"trash-auth": "Autorisation d'élimination / de mise au rebut signée (si des articles sont éliminés)", "job-details-reviewed": "Détails du chantier vérifiés (adresse, étendue, contact) dans Proven Jobs", "customer-called": "Client appelé — créneau d'arrivée confirmé", "liveswitch-setup": "Projet LiveSwitch créé / téléphone chargé pour enregistrer", "crew-address-time": "Tout le monde a l'adresse et l'heure de début", "truck-fueled": "Camion ravitaillé (carte WEX dans le camion)", "truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "dollies-straps": "Diables, chariot à main et sangles chargés", "units-confirmed": "Livraison ou enlèvement du conteneur UNITS confirmé (si ce chantier en utilise un)", "boxes-sml": "Cartons — petits / moyens / grands", "tape-dispensers": "Ruban adhésif et dévidoirs", "paper-bubble": "Papier d'emballage et papier bulle", "wardrobe-boxes": "Cartons penderie", "picture-mirror-boxes": "Cartons pour tableaux / miroirs", "lamp-boxes": "Cartons pour lampes", "dish-pack-boxes": "Cartons pour vaisselle", "furniture-pads": "Couvertures / protections pour meubles", "shrink-wrap": "Film étirable", "labels-markers": "Étiquettes et marqueurs", "floor-protection": "Protection de sol et protège-coins", "trash-bags": "Sacs poubelle", "tool-kit": "Boîte à outils de base", "pull-list": "Liste de prélèvement / inventaire en main", "vault-numbers": "Numéros de box ou d'unité confirmés", "items-verified": "Articles vérifiés par rapport à l'inventaire avant le chargement", "weather-checked": "Météo vérifiée — fournitures de pluie / plastique chargées si nécessaire", "load-plan": "Plan de chargement revu avec l'équipe", "warehouse-secured-leaving": "Entrepôt sécurisé / portes verrouillées", "walk-in-video": "Vidéo d'entrée sur LiveSwitch", "contact-insured": "Contact avec l'assuré", "photos-icat": "Photos sur iCat", "secure-furniture": "Sécuriser les meubles", "walk-out-video": "Vidéo de sortie sur LiveSwitch", "walk-out-photos": "Photos de sortie sur iCat (dernier jour)", "organize-work-area": "Organiser la zone de travail", "secure-truck": "Sécuriser le camion", "clean-trash": "Nettoyer tous les déchets avant de partir", "eod-truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "driving-log": "Le conducteur du camion a rempli le journal de conduite", "contents-vaults": "Contenu transféré dans les box", "equipment-returned": "Équipement remis à sa place", "liveswitch-uploaded": "Vidéos LiveSwitch téléversées", "icat-uploaded": "Contenus iCat téléversés dans le cloud", "dock-bay": "Fermer et sécuriser le quai de chargement", "eod-warehouse-secured": "Entrepôt sécurisé / portes verrouillées", "charge-batteries": "Charger toutes les batteries d'outils et l'appareil de numérisation"}, "tWarehouseStart": "Heure de début à l'entrepôt", "tJobsiteArrival": "Heure d'arrivée sur le chantier", "tJobsiteDeparture": "Heure de départ du chantier", "tWarehouseDeparture": "Heure de départ de l'entrepôt"}, "pt": {"title": "Lista de verificação diária do técnico líder", "subtitle": "BK Packz — preencha isto antes de sair do armazém e depois toque em Enviar ao supervisor para enviar o PDF para o arquivo do trabalho.", "online": "Online", "offline": "Offline", "refresh": "Atualizar", "language": "Idioma", "installApp": "Instalar o aplicativo", "iosHint": "Para instalar: toque em Compartilhar e depois em “Adicionar à Tela de Início”.", "jobDetails": "Detalhes do trabalho", "jobType": "Tipo de trabalho", "packout": "Embalagem", "packback": "Devolução / entrega", "date": "Data", "jobNumber": "Número do trabalho", "leadTech": "Técnico líder", "customerName": "Nome do cliente", "hPaperwork": "1 · Arquivo e documentos do trabalho", "hCrew": "2 · Equipe", "hTruck": "3 · Caminhão e transporte", "hSupplies": "4 · Suprimentos carregados", "hPackbackChecks": "4 · Verificações de devolução", "hBefore": "5 · Antes de sair do armazém", "hDuring": "6 · Durante o dia", "hEod": "7 · Fim do dia", "hNotes": "Observações", "crewNames": "Equipe de hoje — nomes", "notesLabel": "Tudo o que o escritório deve saber", "progressNote": "Os itens não marcados ainda aparecem no PDF, marcados como <strong>NÃO FEITO</strong>, para que o escritório veja o que foi esquecido.", "initials": "Iniciais", "initialsConfirm": "Confirmar que todos os itens segurados foram carregados", "initialsAria": "Iniciais do técnico líder confirmando que todos os itens segurados foram carregados", "eodQuestion": "O conteúdo foi descarregado do caminhão?", "yes": "Sim", "no": "Não", "send": "Enviar ao supervisor", "reset": "Recomeçar — apagar o progresso salvo deste trabalho", "resetArmed": "Toque novamente para apagar tudo", "saveAuto": "Salva automaticamente neste telefone", "saved": "Salvo ✓", "pickedUp": "Você continuou de onde parou", "allDone": "Tudo feito — pronto para sair", "dismiss": "Dispensar", "share": "Compartilhar", "shared": "Compartilhado ✓", "openPdf": "Abrir PDF", "downloadPdf": "Baixar PDF", "returnBtn": "Voltar à lista", "csJob": "Número do trabalho", "csCustomer": "Cliente", "csType": "Tipo de trabalho", "csDate": "Data", "csProgress": "Progresso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} itens marcados", "headingSent": "✓ Lista enviada ao supervisor", "textSent": "O PDF da lista foi compartilhado para este trabalho. Toque em “Voltar à lista” para limpar o formulário e começar o próximo trabalho.", "headingReady": "PDF pronto para enviar", "textReadyTpl": "O PDF da lista ({name}) foi gerado neste telefone e uma cópia foi enviada para Downloads onde este navegador permite. Toque em Compartilhar para enviá-lo: escolha E-mail, Gmail, Mensagens ou outro aplicativo. Se Compartilhar não funcionar aqui, toque em Abrir PDF e use os botões de compartilhar ou salvar do visualizador, ou Baixar PDF para salvar uma cópia e anexá-la. Quando terminar, toque em “Voltar à lista” para limpar o formulário para o próximo trabalho.", "offlineNote": " Você está offline: ainda pode compartilhar; o e-mail será enviado quando a cobertura voltar.", "errNoteTpl": " Observação: o compartilhamento direto falhou neste telefone ({err}); use uma das opções abaixo.", "toastStartedFresh": "Recomeçado do zero: o progresso salvo deste trabalho foi apagado.", "toastReset": "Lista redefinida: pronta para o próximo trabalho.", "toastShareCancelled": "Compartilhamento cancelado", "toastShareCancelledNotSent": "Compartilhamento cancelado: a lista ainda não foi enviada", "toastPickMail": "Escolha E-mail ou Gmail para enviar o PDF para a BK Packz.", "errBuildPdf": "Não foi possível criar o PDF da lista: nada foi enviado", "errShareFail": "Falha no compartilhamento: tente Abrir PDF ou Baixar PDF abaixo", "errAutoDownload": "O download automático do PDF falhou; use Abrir PDF ou Baixar PDF na próxima tela", "errNothing": "Ainda não há nada para compartilhar", "errNothingDetail": "Nenhum PDF aguardando: toque primeiro em Enviar ao supervisor e depois em Compartilhar.", "errNoShare": "O compartilhamento não está disponível neste navegador", "phJob": "ex. 737-26-00171", "phLead": "Seu nome", "phCustomer": "Nome do cliente", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Suprimentos faltando, problemas do trabalho, alterações…", "items": {"trash-auth": "Autorização de descarte / lixo assinada (se itens forem descartados)", "job-details-reviewed": "Detalhes do trabalho revisados (endereço, escopo, contato) no Proven Jobs", "customer-called": "Cliente contatado — janela de chegada confirmada", "liveswitch-setup": "Projeto LiveSwitch configurado / telefone carregado para gravar", "crew-address-time": "Todos têm o endereço e o horário de início", "truck-fueled": "Caminhão abastecido (cartão WEX no caminhão)", "truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "dollies-straps": "Carrinhos, carrinho de mão e cintas carregados", "units-confirmed": "Entrega ou retirada do contêiner UNITS confirmada (se este trabalho usar um)", "boxes-sml": "Caixas — pequenas / médias / grandes", "tape-dispensers": "Fita adesiva e aplicadores", "paper-bubble": "Papel de embalagem e plástico bolha", "wardrobe-boxes": "Caixas guarda-roupa", "picture-mirror-boxes": "Caixas para quadros / espelhos", "lamp-boxes": "Caixas para luminárias", "dish-pack-boxes": "Caixas para louças", "furniture-pads": "Protetores / cobertores para móveis", "shrink-wrap": "Filme stretch", "labels-markers": "Etiquetas e marcadores", "floor-protection": "Proteção para pisos e protetores de canto", "trash-bags": "Sacos de lixo", "tool-kit": "Kit básico de ferramentas", "pull-list": "Lista de separação / inventário em mãos", "vault-numbers": "Números de cofres ou unidades confirmados", "items-verified": "Itens verificados em relação ao inventário antes do carregamento", "weather-checked": "Clima verificado — suprimentos para chuva / plástico carregados se necessário", "load-plan": "Plano de carga revisado com a equipe", "warehouse-secured-leaving": "Armazém trancado / portas fechadas", "walk-in-video": "Vídeo de entrada no LiveSwitch", "contact-insured": "Contato com o segurado", "photos-icat": "Fotos no iCat", "secure-furniture": "Prender os móveis", "walk-out-video": "Vídeo de saída no LiveSwitch", "walk-out-photos": "Fotos de saída no iCat (último dia)", "organize-work-area": "Organizar a área de trabalho", "secure-truck": "Proteger o caminhão", "clean-trash": "Limpar todo o lixo antes de sair", "eod-truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "driving-log": "O motorista do caminhão preencheu o registro de condução", "contents-vaults": "Conteúdo transferido para os cofres", "equipment-returned": "Equipamento devolvido ao seu lugar", "liveswitch-uploaded": "Vídeos do LiveSwitch enviados", "icat-uploaded": "Conteúdo do iCat enviado para a nuvem", "dock-bay": "Fechar e proteger a doca de carga", "eod-warehouse-secured": "Armazém trancado / portas fechadas", "charge-batteries": "Carregar todas as baterias das ferramentas e o dispositivo de digitalização"}, "tWarehouseStart": "Horário de início no armazém", "tJobsiteArrival": "Horário de chegada ao local de trabalho", "tJobsiteDeparture": "Horário de saída do local de trabalho", "tWarehouseDeparture": "Horário de saída do armazém"}};
+        var LANG_KEY = "bkpackz-ltc:lang";
+        var currentLang = "en";
+        try {
+          var savedLang = window.localStorage.getItem(LANG_KEY);
+          if (savedLang && I18N[savedLang]) { currentLang = savedLang; }
+        } catch (e) { /* storage unavailable — default English */ }
+        function dict() { return I18N[currentLang] || I18N.en; }
+        function t(key) {
+          var d = dict();
+          return (d && d[key] !== undefined) ? d[key] : (I18N.en[key] || key);
+        }
+        function fmtTpl(tpl, vals) {
+          return String(tpl).replace(/\{(\w+)\}/g, function (m, k) {
+            return vals[k] !== undefined ? vals[k] : m;
+          });
+        }
+        function refreshHeadings() {
+          var ph = $("packback-heading"); if (ph) { ph.textContent = t("hPackbackChecks"); }
+          var fh = $("final-heading"); if (fh) { fh.textContent = t("hBefore"); }
+          var dh = $("during-heading"); if (dh) { dh.textContent = t("hDuring"); }
+          var eh = $("eod-heading"); if (eh) { eh.textContent = t("hEod"); }
+          var sh = $("supplies-heading"); if (sh) { sh.textContent = t("hSupplies"); }
+        }
+        function applyLanguage(lang, skipSavePref) {
+          if (!I18N[lang]) { lang = "en"; }
+          currentLang = lang;
+          var d = dict();
+          document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
+          document.documentElement.dir = (lang === "he") ? "rtl" : "ltr";
+          document.title = d.title;
+          document.querySelectorAll("[data-i18n]").forEach(function (el) {
+            var k = el.getAttribute("data-i18n");
+            if (d[k] !== undefined) { el.textContent = d[k]; }
+          });
+          document.querySelectorAll("[data-i18n-ph]").forEach(function (el) {
+            var k = el.getAttribute("data-i18n-ph");
+            if (d[k] !== undefined) { el.setAttribute("placeholder", d[k]); }
+          });
+          // Checklist item labels, keyed by the stable data-key — the
+          // saved state itself (keyed the same way) is untouched.
+          document.querySelectorAll('ul.checks input[type="checkbox"]').forEach(function (b) {
+            var k = b.getAttribute("data-key");
+            var lab = b.closest("label");
+            var txt = lab ? lab.querySelector(".txt") : null;
+            if (txt && k && d.items && d.items[k]) { txt.textContent = d.items[k]; }
+          });
+          var initTxt = $("initials-txt"); if (initTxt) { initTxt.textContent = t("initialsConfirm"); }
+          var initInput = $("f-initials"); if (initInput) { initInput.setAttribute("aria-label", t("initialsAria")); }
+          var eq = $("eod-question"); if (eq) { eq.textContent = t("eodQuestion"); }
+          var ynGroup = document.querySelector(".yn-seg");
+          if (ynGroup) { ynGroup.setAttribute("aria-label", t("eodQuestion")); }
+          var ey = $("eod-yes"); if (ey) { ey.textContent = t("yes"); }
+          var en2 = $("eod-no"); if (en2) { en2.textContent = t("no"); }
+          var pn = $("progress-note"); if (pn) { pn.innerHTML = t("progressNote"); }
+          var jd = $("job-details-card"); if (jd) { jd.setAttribute("aria-label", t("jobDetails")); }
+          var ts = $("type-seg"); if (ts) { ts.setAttribute("aria-label", t("jobType")); }
+          refreshHeadings();
+          var sel = $("lang-select"); if (sel && sel.value !== lang) { sel.value = lang; }
+          if (typeof updateNetPill === "function") { updateNetPill(); }
+          if (typeof updateProgress === "function") { updateProgress(); }
+          // Reset button returns to its (translated) default wording,
+          // unless it is mid-confirmation — then just re-word the arm.
+          var rb = $("btn-reset");
+          if (rb) {
+            rb.textContent = (typeof resetArmed !== "undefined" && resetArmed) ? t("resetArmed") : t("reset");
+          }
+          var sb = $("btn-share");
+          if (sb && !sb.disabled) { sb.textContent = t("share"); }
+          if (!skipSavePref) {
+            try { window.localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ }
+          }
+        }
+        var langSelect = $("lang-select");
+        if (langSelect) {
+          langSelect.value = currentLang;
+          langSelect.addEventListener("change", function () {
+            applyLanguage(langSelect.value);
+          });
+        }
+        /* Refresh: ask the service worker (if any) to check for an
+           update first, then reload so the newest published version
+           loads. Saved progress is NOT touched — auto-save keeps every
+           check and field in its per-job slot and restores it on load,
+           exactly as on any reopen. A timeout guarantees the reload
+           even if the update check hangs. */
+        var refreshBtn = $("btn-refresh");
+        if (refreshBtn) {
+          refreshBtn.addEventListener("click", function () {
+            var reloaded = false;
+            function reload() {
+              if (reloaded) { return; }
+              reloaded = true;
+              try { window.location.reload(); } catch (e) { /* ignore */ }
+            }
+            try {
+              if ("serviceWorker" in window.navigator && window.navigator.serviceWorker.getRegistration) {
+                window.navigator.serviceWorker.getRegistration().then(function (reg) {
+                  if (reg && reg.update) {
+                    var u = null;
+                    try { u = reg.update(); } catch (e) { /* ignore */ }
+                    if (u && u.then) { u.then(reload, reload); } else { reload(); }
+                  } else { reload(); }
+                }, reload);
+                setTimeout(reload, 1200);
+              } else { reload(); }
+            } catch (e) { reload(); }
+          });
+        }
 
         /* ---------- State ---------- */
         var jobType = "packout";
@@ -917,10 +1105,7 @@
           // Section numbers stay continuous either way: exactly one of
           // Supplies loaded (packout) / Packback checks (packback) is
           // section 4, so the later sections keep the same numbers.
-          if (packbackHeading) { packbackHeading.textContent = "4 · Packback checks"; }
-          finalHeading.textContent = "5 · Before leaving the warehouse";
-          duringHeading.textContent = "6 · During the day";
-          if (eodHeading) { eodHeading.textContent = "7 · End of day"; }
+          refreshHeadings();
           updateProgress();
         }
         btnPackout.addEventListener("click", function () { setType("packout"); saveState(); });
@@ -949,7 +1134,7 @@
 
         /* ---------- Auto-save on this phone (per job) ---------- */
         var SAVE_PREFIX = "bkpackz-ltc:";
-        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-crew", "f-notes", "f-initials"];
+        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-crew", "f-notes", "f-initials", "f-time-wh-start", "f-time-arrive", "f-time-leave-site", "f-time-wh-depart"];
         var currentKey = null;
         var saveStatusTimer = null;
 
@@ -1021,10 +1206,10 @@
 
         function flashSaved() {
           var el = $("save-status");
-          el.textContent = "Saved ✓";
+          el.textContent = t("saved");
           clearTimeout(saveStatusTimer);
           saveStatusTimer = setTimeout(function () {
-            el.textContent = "Auto-saves on this phone";
+            el.textContent = t("saveAuto");
           }, 2400);
         }
 
@@ -1074,6 +1259,7 @@
         }
 
         // Restore this job's saved progress, if any (URL prefill already applied).
+        applyLanguage(currentLang, true);
         currentKey = stateKey();
         (function restore() {
           var raw = storageGet(currentKey);
@@ -1090,7 +1276,7 @@
           try {
             if (applyState(JSON.parse(raw))) {
               currentKey = stateKey();
-              $("save-status").textContent = "Picked up where you left off";
+              $("save-status").textContent = t("pickedUp");
             }
           } catch (e) { /* corrupted save — start fresh */ }
         })();
@@ -1184,14 +1370,14 @@
         var resetTimer = null;
         function disarmReset() {
           resetArmed = false;
-          resetBtn.textContent = "Start over — clear this job's saved progress";
+          resetBtn.textContent = t("reset");
           resetBtn.classList.remove("confirm");
           clearTimeout(resetTimer);
         }
         resetBtn.addEventListener("click", function () {
           if (!resetArmed) {
             resetArmed = true;
-            resetBtn.textContent = "Tap again to clear everything";
+            resetBtn.textContent = t("resetArmed");
             resetBtn.classList.add("confirm");
             resetTimer = setTimeout(disarmReset, 3500);
             return;
@@ -1213,8 +1399,8 @@
           setEodAnswer("", true);
           updateProgress();
           currentKey = stateKey();
-          $("save-status").textContent = "Auto-saves on this phone";
-          toast("Started fresh — this job's saved progress was cleared.");
+          $("save-status").textContent = t("saveAuto");
+          toast(t("toastStartedFresh"));
         });
 
         /* ---------- Progress ---------- */
@@ -1251,11 +1437,11 @@
           // once either Yes or No is chosen.
           total += 1;
           if (eodAnswer === "Yes" || eodAnswer === "No") { done++; }
-          $("p-count").textContent = done + " of " + total + " checked";
+          $("p-count").textContent = fmtTpl(t("countTpl"), { done: done, total: total });
           var pct = total ? Math.round((done / total) * 100) : 0;
           var pctEl = $("p-pct");
           if (done === total && total > 0) {
-            pctEl.textContent = "All done — ready to roll";
+            pctEl.textContent = t("allDone");
             pctEl.className = "done-all";
           } else {
             pctEl.textContent = pct + "%";
@@ -1320,7 +1506,7 @@
         function updateNetPill() {
           var online = navigator.onLine !== false;
           if (netPill) { netPill.classList.toggle("offline", !online); }
-          if (netLabel) { netLabel.textContent = online ? "Online" : "Offline"; }
+          if (netLabel) { netLabel.textContent = online ? t("online") : t("offline"); }
         }
         window.addEventListener("online", updateNetPill);
         window.addEventListener("offline", updateNetPill);
@@ -1344,8 +1530,13 @@
               if (li.classList.contains("hidden")) { return; }
               var b = li.querySelector('input[type="checkbox"]');
               if (b) {
+                // PDF is always English: use the English label for this
+                // item's stable data-key, not the on-screen (possibly
+                // translated) text.
+                var bkey = b.getAttribute("data-key");
                 var label = b.closest("label");
-                var txt = label ? label.querySelector(".txt").textContent.trim() : "";
+                var txt = (bkey && I18N.en.items[bkey]) ? I18N.en.items[bkey]
+                  : (label ? label.querySelector(".txt").textContent.trim() : "");
                 items.push({ text: txt, done: b.checked });
                 return;
               }
@@ -1354,8 +1545,7 @@
                 // Initials sign-off: shows "Initials: XX" on the PDF when
                 // filled, NOT DONE while blank.
                 var initials = initInput.value.trim().toUpperCase();
-                var span = li.querySelector(".txt");
-                var base = span ? span.textContent.trim() : "Confirm all insured items are loaded";
+                var base = I18N.en.initialsConfirm; // PDF stays English
                 items.push({
                   text: base + (initials ? " — Initials: " + initials : ""),
                   done: initials !== ""
@@ -1364,8 +1554,7 @@
               }
               var ynRow = li.querySelector("[data-yn]");
               if (ynRow) {
-                var ynSpan = li.querySelector(".txt");
-                var ynBase = ynSpan ? ynSpan.textContent.trim() : "Were contents unloaded from truck?";
+                var ynBase = I18N.en.eodQuestion; // PDF stays English
                 var answered = (eodAnswer === "Yes" || eodAnswer === "No");
                 items.push({
                   text: ynBase + (answered ? " — " + eodAnswer : ""),
@@ -1389,9 +1578,28 @@
             lead: val("f-lead"),
             customer: val("f-customer"),
             notes: val("f-notes"),
+            times: {
+              whStart: val("f-time-wh-start"),
+              arrive: val("f-time-arrive"),
+              leaveSite: val("f-time-leave-site"),
+              whDepart: val("f-time-wh-depart")
+            },
             sections: sections,
             completedAt: new Date()
           };
+        }
+
+        // "07:05" / "13:30" (time-input values) -> "7:05 AM" / "1:30 PM"
+        // for the PDF; anything blank or malformed prints as an em dash
+        // so the office can see the time was never recorded.
+        function fmtTime12(v) {
+          var m = /^([0-9]{1,2}):([0-9]{2})/.exec(String(v || "").trim());
+          if (!m) { return "\u2014"; }
+          var hh = parseInt(m[1], 10);
+          if (isNaN(hh) || hh > 23) { return "\u2014"; }
+          var suffix = hh >= 12 ? "PM" : "AM";
+          var h12 = hh % 12; if (h12 === 0) { h12 = 12; }
+          return h12 + ":" + m[2] + " " + suffix;
         }
 
         function fileName(data) {
@@ -1553,7 +1761,11 @@
             ["Lead Technician", data.lead || "—"],
             ["Job Number", data.job || "—"],
             ["Customer", data.customer || "—"],
-            ["Job Type", data.type]
+            ["Job Type", data.type],
+            ["Warehouse start", fmtTime12(data.times && data.times.whStart)],
+            ["Jobsite arrival", fmtTime12(data.times && data.times.arrive)],
+            ["Jobsite departure", fmtTime12(data.times && data.times.leaveSite)],
+            ["Warehouse departure", fmtTime12(data.times && data.times.whDepart)]
           ];
           fields.forEach(function (f) {
             need(17);
@@ -1825,7 +2037,7 @@
 
         function resetShareButton() {
           if (!shareBtn) { return; }
-          shareBtn.textContent = "Share";
+          shareBtn.textContent = t("share");
           shareBtn.disabled = false;
         }
 
@@ -1843,9 +2055,9 @@
           var prog = progressSummary(data);
           $("cs-job").textContent = data.job || "—";
           $("cs-customer").textContent = data.customer || "—";
-          $("cs-type").textContent = data.type;
+          $("cs-type").textContent = (data.type === "Packback") ? t("packback") : t("packout");
           $("cs-date").textContent = data.date || "—";
-          $("cs-progress").textContent = prog.done + " of " + prog.total + " items checked";
+          $("cs-progress").textContent = fmtTpl(t("itemsCheckedTpl"), { done: prog.done, total: prog.total });
         }
 
         function openConfirm() {
@@ -1857,8 +2069,8 @@
         // Share-sheet path only: the share actually completed.
         function showSentConfirmation(data) {
           fillConfirmSummary(data);
-          $("confirm-heading").textContent = "✓ Checklist sent to supervisor";
-          $("confirm-text").textContent = "The checklist PDF was shared for this job. Tap “Return to checklist” to clear the form and start the next job.";
+          $("confirm-heading").textContent = t("headingSent");
+          $("confirm-text").textContent = t("textSent");
           $("cs-time-row").classList.remove("hidden");
           $("cs-time").textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
           if (shareBtn) { shareBtn.classList.add("hidden"); }
@@ -1874,14 +2086,10 @@
         // error text is included so the failure is visible, not silent.
         function showReadyConfirmation(made, data, shareErr) {
           fillConfirmSummary(data);
-          $("confirm-heading").textContent = "PDF ready to send";
-          var offlineNote = (navigator.onLine === false)
-            ? " You're offline — you can still share; email sends when you're back in coverage."
-            : "";
-          var errNote = shareErr
-            ? " Note: direct sharing failed on this phone (" + errText(shareErr) + ") — use one of the options below instead."
-            : "";
-          $("confirm-text").textContent = "The checklist PDF (" + made.name + ") was generated on this phone, and a copy was sent to Downloads where this browser allows it. Tap Share to send it — pick Mail, Gmail, Messages, or another app. If Share doesn't work here, tap Open PDF and use the viewer's own share or save buttons, or Download PDF to save a copy you can attach. When you're done, tap “Return to checklist” to clear the form for the next job." + errNote + offlineNote;
+          $("confirm-heading").textContent = t("headingReady");
+          var offlineNote = (navigator.onLine === false) ? t("offlineNote") : "";
+          var errNote = shareErr ? fmtTpl(t("errNoteTpl"), { err: errText(shareErr) }) : "";
+          $("confirm-text").textContent = fmtTpl(t("textReadyTpl"), { name: made.name }) + errNote + offlineNote;
           $("cs-time-row").classList.add("hidden");
           if (shareBtn) {
             resetShareButton();
@@ -1911,7 +2119,7 @@
           updateProgress();
           currentKey = stateKey();
           disarmReset();
-          $("save-status").textContent = "Auto-saves on this phone";
+          $("save-status").textContent = t("saveAuto");
         }
 
         $("btn-return").addEventListener("click", function () {
@@ -1928,7 +2136,7 @@
           clearPdfLinks();
           hideError();
           resetForNextJob();
-          toast("Checklist reset — ready for the next job.");
+          toast(t("toastReset"));
         });
 
         function fallbackSend(made, data, existingFile, shareErr) {
@@ -1942,7 +2150,7 @@
           try {
             downloadBlob(made.blob, made.name);
           } catch (dlErr) {
-            showError("The automatic PDF download failed; use Open PDF or Download PDF on the next screen", dlErr);
+            showError(t("errAutoDownload"), dlErr);
           }
           var file = existingFile || null;
           if (!file) {
@@ -1967,11 +2175,11 @@
         if (shareBtn) {
           shareBtn.addEventListener("click", function () {
             if (!pendingShare) {
-              showError("Nothing to share yet", "No PDF is waiting — tap Send to Supervisor first, then Share.");
+              showError(t("errNothing"), t("errNothingDetail"));
               return;
             }
             if (!navigator.share) {
-              showError("Sharing isn't available in this browser",
+              showError(t("errNoShare"),
                 "This browser doesn't provide the Web Share API (navigator.share is missing). Use Open PDF or Download PDF below instead.");
               return;
             }
@@ -2013,22 +2221,22 @@
               }
             } catch (err) {
               if (err && err.name === "AbortError") {
-                toast("Share cancelled");
+                toast(t("toastShareCancelled"));
                 return;
               }
-              showError("Sharing failed — try Open PDF or Download PDF below", err);
+              showError(t("errShareFail"), err);
               return;
             }
             if (sharePromise && sharePromise.then) {
               sharePromise.then(function () {
-                shareBtn.textContent = "Shared ✓";
+                shareBtn.textContent = t("shared");
                 shareBtn.disabled = true;
               }, function (err) {
                 if (err && err.name === "AbortError") {
-                  toast("Share cancelled");
+                  toast(t("toastShareCancelled"));
                   return;
                 }
-                showError("Sharing failed — try Open PDF or Download PDF below", err);
+                showError(t("errShareFail"), err);
               });
             }
           });
@@ -2057,7 +2265,7 @@
               } catch (e) { canShareFiles = false; }
 
               if (canShareFiles && file) {
-                toast("Pick Mail or Gmail to email the PDF to BK Packz.");
+                toast(t("toastPickMail"));
                 navigator.share({
                   files: [file],
                   title: subject,
@@ -2072,7 +2280,7 @@
                   // but can't) falls back to download + Share button
                   // instead of leaving the tech with nothing.
                   if (err && err.name === "AbortError") {
-                    toast("Share cancelled — checklist not sent yet");
+                    toast(t("toastShareCancelledNotSent"));
                     return;
                   }
                   fallbackSend(made, data, file, err);
@@ -2082,7 +2290,7 @@
 
               fallbackSend(made, data, file);
             } catch (err) {
-              showError("Couldn't build the checklist PDF — nothing was sent", err);
+              showError(t("errBuildPdf"), err);
             }
           });
         }
