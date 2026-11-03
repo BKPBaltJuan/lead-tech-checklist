@@ -1939,8 +1939,6 @@
           return { blob: lastBlob, name: lastName, data: data };
         }
 
-        var BK_EMAIL = "juan.rodriguez@bkpackz.com";
-
         function emailSubject(data) {
           var job = data.job || "No job number";
           var customer = data.customer || "No customer";
@@ -1974,8 +1972,9 @@
         /* ---------- Send to Supervisor (combined Generate + Share) ----------
            One tap builds the same PDF. Where the device can share files,
            the share sheet opens with the PDF attached so the tech can pick
-           Mail/Gmail and send it to Juan — the sheet itself does not
-           pre-address the recipient. Where file sharing is unavailable or
+           Mail/Gmail, Messages, or another app — no recipient is
+           pre-addressed anywhere; the tech picks where the PDF goes.
+           Where file sharing is unavailable or
            the share call fails, the confirmation offers three real,
            user-tapped ways at the same built PDF: a Share button
            (navigator.share on the tap), an Open PDF link (the PDF in the
@@ -2199,7 +2198,7 @@
                 sharePromise = navigator.share({
                   files: [fileToShare],
                   title: subject,
-                  text: subject + "\nSend to: " + BK_EMAIL
+                  text: subject
                 });
               } else {
                 var prog = progressSummary(data);
@@ -2269,7 +2268,7 @@
                 navigator.share({
                   files: [file],
                   title: subject,
-                  text: subject + "\nSend to: " + BK_EMAIL
+                  text: subject
                 }).then(function () {
                   // The share completed — confirm it in-page.
                   showSentConfirmation(data);
