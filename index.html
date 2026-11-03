@@ -161,6 +161,12 @@
       }
       .net-pill.offline .net-dot { background: var(--gold-line); }
 
+      /* Current-location readout: one subtle display-only line under
+         the top controls. It is never saved, never attached to an
+         item, and never printed — per-task locations live only in
+         the saved state and on the PDF report. */
+      .loc-row { margin: -6px 0 12px; font-size: 13px; color: var(--ink-soft); }
+
       /* Brand header: the BK Packz logo on a deep-blue band */
       .brand-band {
         background: var(--brand);
@@ -375,6 +381,29 @@
         color: var(--gold-ink);
       }
       .yn-seg button:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+
+      /* Lead tech signature block (bottom of the form, required
+         before Send to Supervisor). Not a checklist item — it never
+         affects the counters. */
+      .sig-attest { font-size: 15.5px; margin: 0 0 14px; }
+      #f-sig-lead { background: var(--surface-2); }
+      #f-sig-name[readonly] { background: var(--surface-2); }
+      .sig-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+      .sig-actions .btn { flex: 1; }
+      .sig-status { font-size: 14.5px; color: var(--ink-soft); margin: 12px 0 0; }
+      .sig-status.signed {
+        background: var(--ok-soft);
+        color: var(--ink);
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .sig-required {
+        color: var(--danger);
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0 0 10px;
+      }
 
       .hidden { display: none !important; }
 
@@ -645,7 +674,7 @@
       @media print {
         body { height: auto; display: block; }
         .wrap { overflow: visible; }
-        .bar, .confirm-overlay, .net-row, .top-controls { display: none; }
+        .bar, .confirm-overlay, .net-row, .top-controls, .loc-row { display: none; }
       }
     </style>
   </head>
@@ -681,6 +710,7 @@
           </button>
         </div>
       </div>
+      <div class="loc-row"><span id="cur-loc">Current location: …</span></div>
 
       <!-- Install affordance: filled in by script only when install is
            possible (browser prompt) or needed (iOS hint). -->
@@ -830,6 +860,7 @@
           <li><label class="check"><input type="checkbox" data-key="organize-work-area" /><span class="txt">Organize work area</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="secure-truck" /><span class="txt">Secure truck</span></label></li>
           <li><label class="check"><input type="checkbox" data-key="clean-trash" /><span class="txt">Clean all trash before leaving</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="lights-off-doors-locked" /><span class="txt">Turn all lights off, lock all doors</span></label></li>
         </ul>
         <div class="field time-field after-list">
           <label class="flabel" for="f-time-leave-site" data-i18n="tJobsiteDeparture">Jobsite departure time</label>
@@ -876,6 +907,30 @@
         <p class="progress-note" id="progress-note">Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.</p>
       </section>
 
+      <!-- Lead tech signature: the last block on the form. Signing is
+           required before Send to Supervisor. The Lead Tech line mirrors
+           the header's Lead technician field; the signature itself is a
+           typed full name plus a Sign tap that stamps the date and time
+           from this phone's clock. -->
+      <section class="card" id="sig-card">
+        <h2 data-i18n="hSignature">Lead tech signature</h2>
+        <p class="sig-attest" data-i18n="sigAttest">I confirm that all tasks marked on this list have been completed, and any task not marked was not required.</p>
+        <div class="field">
+          <label class="flabel" for="f-sig-lead" data-i18n="sigLeadLabel">Lead Tech</label>
+          <input type="text" id="f-sig-lead" readonly tabindex="-1" />
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-sig-name" data-i18n="sigNameLabel">Signature — type your full name</label>
+          <input type="text" id="f-sig-name" placeholder="Full name" autocomplete="off" data-i18n-ph="sigNamePh" />
+        </div>
+        <p class="sig-required hidden" id="sig-required-msg" role="alert"></p>
+        <div class="sig-actions">
+          <button type="button" class="btn btn-primary" id="btn-sign" data-i18n="sigSignBtn">Sign</button>
+          <button type="button" class="btn btn-ghost hidden" id="btn-sig-clear" data-i18n="sigClearBtn">Clear &amp; re-sign</button>
+        </div>
+        <p class="sig-status" id="sig-status"></p>
+      </section>
+
       <div class="reset-row">
         <button type="button" class="reset-btn" id="btn-reset">Start over — clear this job's saved progress</button>
       </div>
@@ -885,7 +940,7 @@
     <div class="bar">
       <div class="bar-inner">
         <div class="pmeta">
-          <span class="count" id="p-count">0 of 44 checked</span>
+          <span class="count" id="p-count">0 of 45 checked</span>
           <span class="save-status" id="save-status">Auto-saves on this phone</span>
           <span class="pct" id="p-pct"></span>
         </div>
@@ -947,7 +1002,7 @@
            translated on-screen text). The chosen language is a
            device-level preference in its own localStorage slot,
            separate from every per-job save slot. */
-        var I18N = {"en": {"title": "Lead Tech Daily Checklist", "subtitle": "BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.", "online": "Online", "offline": "Offline", "refresh": "Refresh", "language": "Language", "installApp": "Install app", "iosHint": "To install: tap Share, then “Add to Home Screen.”", "jobDetails": "Job details", "jobType": "Job type", "packout": "Packout", "packback": "Packback", "date": "Date", "jobNumber": "Job number", "leadTech": "Lead technician", "customerName": "Customer name", "hPaperwork": "1 · Job file & paperwork", "hCrew": "2 · Crew", "hTruck": "3 · Truck & transport", "hSupplies": "4 · Supplies loaded", "hPackbackChecks": "4 · Packback checks", "hBefore": "5 · Before leaving the warehouse", "hDuring": "6 · During the day", "hEod": "7 · End of day", "hNotes": "Notes", "crewNames": "Crew for today — names", "notesLabel": "Anything the office should know", "progressNote": "Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.", "initials": "Initials", "initialsConfirm": "Confirm all insured items are loaded", "initialsAria": "Lead technician initials confirming all insured items are loaded", "eodQuestion": "Were contents unloaded from truck?", "yes": "Yes", "no": "No", "send": "Send to Supervisor", "reset": "Start over — clear this job's saved progress", "resetArmed": "Tap again to clear everything", "saveAuto": "Auto-saves on this phone", "saved": "Saved ✓", "pickedUp": "Picked up where you left off", "allDone": "All done — ready to roll", "dismiss": "Dismiss", "share": "Share", "shared": "Shared ✓", "openPdf": "Open PDF", "downloadPdf": "Download PDF", "returnBtn": "Return to checklist", "csJob": "Job number", "csCustomer": "Customer", "csType": "Job type", "csDate": "Date", "csProgress": "Progress", "csSubmitted": "Submitted", "countTpl": "{done} of {total} checked", "itemsCheckedTpl": "{done} of {total} items checked", "headingSent": "✓ Checklist sent to supervisor", "textSent": "The checklist PDF was shared for this job. Tap “Return to checklist” to clear the form and start the next job.", "headingReady": "PDF ready to send", "textReadyTpl": "The checklist PDF ({name}) was generated on this phone, and a copy was sent to Downloads where this browser allows it. Tap Share to send it — pick Mail, Gmail, Messages, or another app. If Share doesn't work here, tap Open PDF and use the viewer's own share or save buttons, or Download PDF to save a copy you can attach. When you're done, tap “Return to checklist” to clear the form for the next job.", "offlineNote": " You're offline — you can still share; email sends when you're back in coverage.", "errNoteTpl": " Note: direct sharing failed on this phone ({err}) — use one of the options below instead.", "toastStartedFresh": "Started fresh — this job's saved progress was cleared.", "toastReset": "Checklist reset — ready for the next job.", "toastShareCancelled": "Share cancelled", "toastShareCancelledNotSent": "Share cancelled — checklist not sent yet", "toastPickMail": "Pick Mail or Gmail to email the PDF to BK Packz.", "errBuildPdf": "Couldn't build the checklist PDF — nothing was sent", "errShareFail": "Sharing failed — try Open PDF or Download PDF below", "errAutoDownload": "The automatic PDF download failed; use Open PDF or Download PDF on the next screen", "errNothing": "Nothing to share yet", "errNothingDetail": "No PDF is waiting — tap Send to Supervisor first, then Share.", "errNoShare": "Sharing isn't available in this browser", "phJob": "e.g. 737-26-00171", "phLead": "Your name", "phCustomer": "Customer name", "phCrew": "e.g. Jennifer P., Ben W., Alberto G.", "phNotes": "Missing supplies, job concerns, changes…", "items": {"trash-auth": "Trash / disposal authorization signed (if items are being disposed)", "job-details-reviewed": "Job details reviewed (address, scope, contact) in Proven Jobs", "customer-called": "Customer called — arrival window confirmed", "liveswitch-setup": "LiveSwitch project set up / phone charged for recording", "crew-address-time": "Everyone has the address and start time", "truck-fueled": "Truck fueled (WEX card in truck)", "truck-checked": "Truck checked: lights, tires, liftgate / ramp", "dollies-straps": "Dollies, hand truck, and straps loaded", "units-confirmed": "UNITS container delivery or pickup confirmed (if this job uses one)", "boxes-sml": "Boxes — small / medium / large", "tape-dispensers": "Tape and dispensers", "paper-bubble": "Packing paper and bubble wrap", "wardrobe-boxes": "Wardrobe boxes", "picture-mirror-boxes": "Picture / mirror boxes", "lamp-boxes": "Lamp boxes", "dish-pack-boxes": "Dish pack boxes", "furniture-pads": "Furniture pads / blankets", "shrink-wrap": "Shrink wrap", "labels-markers": "Labels and markers", "floor-protection": "Floor protection and corner protectors", "trash-bags": "Trash bags", "tool-kit": "Basic tool kit", "pull-list": "Pull list / inventory list in hand", "vault-numbers": "Vault or unit numbers confirmed", "items-verified": "Items verified against inventory before loading", "weather-checked": "Weather checked — rain supplies / plastic loaded if needed", "load-plan": "Load plan reviewed with crew", "warehouse-secured-leaving": "Warehouse secured / doors locked", "walk-in-video": "Walk-in video on LiveSwitch", "contact-insured": "Contact with insured", "photos-icat": "Photos on iCat", "secure-furniture": "Secure furniture", "walk-out-video": "Walk-out video on LiveSwitch", "walk-out-photos": "Walk-out photos on iCat (final day)", "organize-work-area": "Organize work area", "secure-truck": "Secure truck", "clean-trash": "Clean all trash before leaving", "eod-truck-checked": "Truck checked: lights, tires, liftgate / ramp", "driving-log": "Truck driver filled out driving log", "contents-vaults": "Contents transferred to vaults", "equipment-returned": "Equipment returned to its place", "liveswitch-uploaded": "LiveSwitch videos uploaded", "icat-uploaded": "iCat contents uploaded to cloud", "dock-bay": "Close and secure loading dock bay", "eod-warehouse-secured": "Warehouse secured / doors locked", "charge-batteries": "Charge all tool batteries and scanning device"}, "tWarehouseStart": "Warehouse start time", "tJobsiteArrival": "Jobsite arrival time", "tJobsiteDeparture": "Jobsite departure time", "tWarehouseDeparture": "Warehouse departure time"}, "es": {"title": "Lista diaria del técnico líder", "subtitle": "BK Packz — complete esto antes de salir del almacén y luego toque Enviar al supervisor para enviar el PDF al archivo del trabajo.", "online": "En línea", "offline": "Sin conexión", "refresh": "Actualizar", "language": "Idioma", "installApp": "Instalar la aplicación", "iosHint": "Para instalar: toque Compartir y luego «Añadir a pantalla de inicio».", "jobDetails": "Detalles del trabajo", "jobType": "Tipo de trabajo", "packout": "Empaque", "packback": "Entrega", "date": "Fecha", "jobNumber": "Número de trabajo", "leadTech": "Técnico líder", "customerName": "Nombre del cliente", "hPaperwork": "1 · Archivo y documentos del trabajo", "hCrew": "2 · Equipo", "hTruck": "3 · Camión y transporte", "hSupplies": "4 · Suministros cargados", "hPackbackChecks": "4 · Verificaciones de entrega", "hBefore": "5 · Antes de salir del almacén", "hDuring": "6 · Durante el día", "hEod": "7 · Fin del día", "hNotes": "Notas", "crewNames": "Equipo de hoy — nombres", "notesLabel": "Todo lo que la oficina debe saber", "progressNote": "Los artículos sin marcar también aparecen en el PDF, marcados como <strong>NO HECHO</strong>, para que la oficina vea lo que faltó.", "initials": "Iniciales", "initialsConfirm": "Confirmar que todos los artículos asegurados están cargados", "initialsAria": "Iniciales del técnico líder que confirma que todos los artículos asegurados están cargados", "eodQuestion": "¿Se descargó el contenido del camión?", "yes": "Sí", "no": "No", "send": "Enviar al supervisor", "reset": "Empezar de nuevo — borrar el progreso guardado de este trabajo", "resetArmed": "Toque de nuevo para borrar todo", "saveAuto": "Se guarda automáticamente en este teléfono", "saved": "Guardado ✓", "pickedUp": "Continuaste donde lo dejaste", "allDone": "Todo listo — a trabajar", "dismiss": "Descartar", "share": "Compartir", "shared": "Compartido ✓", "openPdf": "Abrir PDF", "downloadPdf": "Descargar PDF", "returnBtn": "Volver a la lista", "csJob": "Número de trabajo", "csCustomer": "Cliente", "csType": "Tipo de trabajo", "csDate": "Fecha", "csProgress": "Progreso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} artículos marcados", "headingSent": "✓ Lista enviada al supervisor", "textSent": "El PDF de la lista se compartió para este trabajo. Toque «Volver a la lista» para limpiar el formulario y empezar el siguiente trabajo.", "headingReady": "PDF listo para enviar", "textReadyTpl": "El PDF de la lista ({name}) se generó en este teléfono y se envió una copia a Descargas donde este navegador lo permite. Toque Compartir para enviarlo: elija Correo, Gmail, Mensajes u otra aplicación. Si Compartir no funciona aquí, toque Abrir PDF y use los botones de compartir o guardar del visor, o Descargar PDF para guardar una copia y adjuntarla. Cuando termine, toque «Volver a la lista» para limpiar el formulario para el siguiente trabajo.", "offlineNote": " Está sin conexión: aún puede compartir; el correo se enviará cuando recupere la cobertura.", "errNoteTpl": " Nota: el uso compartido directo falló en este teléfono ({err}); use una de las opciones siguientes.", "toastStartedFresh": "Empezamos de nuevo: se borró el progreso guardado de este trabajo.", "toastReset": "Lista reiniciada: lista para el siguiente trabajo.", "toastShareCancelled": "Compartir cancelado", "toastShareCancelledNotSent": "Compartir cancelado: la lista aún no se envió", "toastPickMail": "Elija Correo o Gmail para enviar el PDF a BK Packz.", "errBuildPdf": "No se pudo crear el PDF de la lista: no se envió nada", "errShareFail": "Error al compartir: pruebe Abrir PDF o Descargar PDF abajo", "errAutoDownload": "La descarga automática del PDF falló; use Abrir PDF o Descargar PDF en la siguiente pantalla", "errNothing": "Aún no hay nada para compartir", "errNothingDetail": "No hay ningún PDF en espera: primero toque Enviar al supervisor y luego Compartir.", "errNoShare": "Compartir no está disponible en este navegador", "phJob": "ej. 737-26-00171", "phLead": "Su nombre", "phCustomer": "Nombre del cliente", "phCrew": "ej. Jennifer P., Ben W., Alberto G.", "phNotes": "Suministros faltantes, problemas del trabajo, cambios…", "items": {"trash-auth": "Autorización de basura / desecho firmada (si se van a desechar artículos)", "job-details-reviewed": "Detalles del trabajo revisados (dirección, alcance, contacto) en Proven Jobs", "customer-called": "Cliente llamado — horario de llegada confirmado", "liveswitch-setup": "Proyecto de LiveSwitch creado / teléfono cargado para grabar", "crew-address-time": "Todos tienen la dirección y la hora de inicio", "truck-fueled": "Camión con combustible (tarjeta WEX en el camión)", "truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "dollies-straps": "Carretillas, carrito de mano y correas cargados", "units-confirmed": "Entrega o recogida del contenedor UNITS confirmada (si este trabajo usa uno)", "boxes-sml": "Cajas — pequeñas / medianas / grandes", "tape-dispensers": "Cinta adhesiva y dispensadores", "paper-bubble": "Papel de embalaje y plástico de burbujas", "wardrobe-boxes": "Cajas para ropa (guardarropa)", "picture-mirror-boxes": "Cajas para cuadros / espejos", "lamp-boxes": "Cajas para lámparas", "dish-pack-boxes": "Cajas para vajilla", "furniture-pads": "Protectores / mantas para muebles", "shrink-wrap": "Plástico retráctil (film)", "labels-markers": "Etiquetas y marcadores", "floor-protection": "Protección para pisos y protectores de esquinas", "trash-bags": "Bolsas de basura", "tool-kit": "Kit básico de herramientas", "pull-list": "Lista de extracción / inventario en mano", "vault-numbers": "Números de bóveda o unidad confirmados", "items-verified": "Artículos verificados contra el inventario antes de cargar", "weather-checked": "Clima revisado — suministros para lluvia / plástico cargados si es necesario", "load-plan": "Plan de carga revisado con el equipo", "warehouse-secured-leaving": "Almacén asegurado / puertas cerradas con llave", "walk-in-video": "Video de entrada en LiveSwitch", "contact-insured": "Contacto con el asegurado", "photos-icat": "Fotos en iCat", "secure-furniture": "Asegurar los muebles", "walk-out-video": "Video de salida en LiveSwitch", "walk-out-photos": "Fotos de salida en iCat (último día)", "organize-work-area": "Organizar el área de trabajo", "secure-truck": "Asegurar el camión", "clean-trash": "Limpiar toda la basura antes de salir", "eod-truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "driving-log": "El conductor del camión completó el registro de manejo", "contents-vaults": "Contenido trasladado a las bóvedas", "equipment-returned": "Equipo devuelto a su lugar", "liveswitch-uploaded": "Videos de LiveSwitch subidos", "icat-uploaded": "Contenido de iCat subido a la nube", "dock-bay": "Cerrar y asegurar el muelle de carga", "eod-warehouse-secured": "Almacén asegurado / puertas cerradas con llave", "charge-batteries": "Cargar todas las baterías de herramientas y el dispositivo de escaneo"}, "tWarehouseStart": "Hora de inicio en el almacén", "tJobsiteArrival": "Hora de llegada al lugar de trabajo", "tJobsiteDeparture": "Hora de salida del lugar de trabajo", "tWarehouseDeparture": "Hora de salida del almacén"}, "he": {"title": "רשימת הבדיקות היומית של הטכנאי הראשי", "subtitle": "BK Packz — מלאו זאת לפני היציאה מהמחסן, ולאחר מכן הקישו על שליחה למפקח כדי לשלוח את ה-PDF לתיק העבודה.", "online": "מחובר", "offline": "לא מחובר", "refresh": "רענון", "language": "שפה", "installApp": "התקנת האפליקציה", "iosHint": "להתקנה: הקישו על שיתוף ולאחר מכן על “הוספה למסך הבית”.", "jobDetails": "פרטי העבודה", "jobType": "סוג העבודה", "packout": "אריזה והוצאה", "packback": "החזרה ופריקה", "date": "תאריך", "jobNumber": "מספר עבודה", "leadTech": "טכנאי ראשי", "customerName": "שם הלקוח", "hPaperwork": "1 · תיק עבודה ומסמכים", "hCrew": "2 · צוות", "hTruck": "3 · משאית והובלה", "hSupplies": "4 · ציוד שנטען", "hPackbackChecks": "4 · בדיקות החזרה", "hBefore": "5 · לפני היציאה מהמחסן", "hDuring": "6 · במהלך היום", "hEod": "7 · סוף היום", "hNotes": "הערות", "crewNames": "צוות היום — שמות", "notesLabel": "כל מה שהמשרד צריך לדעת", "progressNote": "פריטים שלא סומנו עדיין מופיעים ב-PDF ומסומנים כ<strong>לא בוצע</strong> — כדי שהמשרד יראה מה הוחמץ.", "initials": "ראשי תיבות", "initialsConfirm": "לאשר שכל הפריטים המבוטחים נטענו", "initialsAria": "ראשי התיבות של הטכנאי הראשי המאשר שכל הפריטים המבוטחים נטענו", "eodQuestion": "האם התכולה נפרקה מהמשאית?", "yes": "כן", "no": "לא", "send": "שליחה למפקח", "reset": "התחלה מחדש — מחיקת ההתקדמות השמורה של עבודה זו", "resetArmed": "הקישו שוב כדי למחוק הכול", "saveAuto": "נשמר אוטומטית בטלפון זה", "saved": "נשמר ✓", "pickedUp": "המשכתם מהמקום שבו הפסקתם", "allDone": "הכול בוצע — מוכנים לצאת", "dismiss": "סגירה", "share": "שיתוף", "shared": "שותף ✓", "openPdf": "פתיחת PDF", "downloadPdf": "הורדת PDF", "returnBtn": "חזרה לרשימה", "csJob": "מספר עבודה", "csCustomer": "לקוח", "csType": "סוג העבודה", "csDate": "תאריך", "csProgress": "התקדמות", "csSubmitted": "נשלח", "countTpl": "{done} מתוך {total} סומנו", "itemsCheckedTpl": "{done} מתוך {total} פריטים סומנו", "headingSent": "✓ הרשימה נשלחה למפקח", "textSent": "קובץ ה-PDF של הרשימה שותף עבור עבודה זו. הקישו על “חזרה לרשימה” כדי לנקות את הטופס ולהתחיל את העבודה הבאה.", "headingReady": "ה-PDF מוכן לשליחה", "textReadyTpl": "קובץ ה-PDF של הרשימה ({name}) נוצר בטלפון זה, עותק נשלח להורדות היכן שהדפדפן מאפשר זאת. הקישו על שיתוף כדי לשלוח אותו — בחרו דואר, Gmail, הודעות או אפליקציה אחרת. אם השיתוף לא עובד כאן, הקישו על פתיחת PDF והשתמשו בלחצני השיתוף או השמירה של המציג, או על הורדת PDF כדי לשמור עותק לצירוף. כשתסיימו, הקישו על “חזרה לרשימה” כדי לנקות את הטופס לעבודה הבאה.", "offlineNote": " אתם במצב לא מחובר — עדיין ניתן לשתף; הדוא״ל יישלח כשתחזור הקליטה.", "errNoteTpl": " הערה: השיתוף הישיר נכשל בטלפון זה ({err}) — השתמשו באחת האפשרויות שלהלן.", "toastStartedFresh": "התחלנו מחדש — ההתקדמות השמורה של עבודה זו נמחקה.", "toastReset": "הרשימה אופסה — מוכנים לעבודה הבאה.", "toastShareCancelled": "השיתוף בוטל", "toastShareCancelledNotSent": "השיתוף בוטל — הרשימה עדיין לא נשלחה", "toastPickMail": "בחרו דואר או Gmail כדי לשלוח את ה-PDF ל-BK Packz.", "errBuildPdf": "לא ניתן היה ליצור את PDF של הרשימה — דבר לא נשלח", "errShareFail": "השיתוף נכשל — נסו פתיחת PDF או הורדת PDF שלהלן", "errAutoDownload": "ההורדה האוטומטית של ה-PDF נכשלה; השתמשו בפתיחת PDF או בהורדת PDF במסך הבא", "errNothing": "אין עדיין מה לשתף", "errNothingDetail": "אין PDF ממתין — הקישו תחילה על שליחה למפקח ולאחר מכן על שיתוף.", "errNoShare": "השיתוף אינו זמין בדפדפן זה", "phJob": "לדוגמה 737-26-00171", "phLead": "שמך", "phCustomer": "שם הלקוח", "phCrew": "לדוגמה Jennifer P., Ben W., Alberto G.", "phNotes": "ציוד חסר, בעיות בעבודה, שינויים…", "items": {"trash-auth": "אישור פינוי / השלכת אשפה חתום (אם מפנים פריטים)", "job-details-reviewed": "פרטי העבודה נבדקו (כתובת, היקף, איש קשר) ב-Proven Jobs", "customer-called": "הלקוח קיבל שיחה — חלון ההגעה אושר", "liveswitch-setup": "פרויקט LiveSwitch הוקם / הטלפון טעון להקלטה", "crew-address-time": "לכולם יש את הכתובת ושעת ההתחלה", "truck-fueled": "המשאית מתודלקת (כרטיס WEX במשאית)", "truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "dollies-straps": "עגלות, עגלת יד ורצועות נטענו", "units-confirmed": "משלוח או איסוף של מכולת UNITS אושר (אם העבודה משתמשת באחת)", "boxes-sml": "קופסאות — קטנות / בינוניות / גדולות", "tape-dispensers": "סרט הדבקה ומתקני הדבקה", "paper-bubble": "נייר אריזה וניילון בועות", "wardrobe-boxes": "קופסאות ארון בגדים", "picture-mirror-boxes": "קופסאות לתמונות / מראות", "lamp-boxes": "קופסאות למנורות", "dish-pack-boxes": "קופסאות לכלי אוכל", "furniture-pads": "כריות / שמיכות לרהיטים", "shrink-wrap": "ניילון נצמד", "labels-markers": "מדבקות וטושים", "floor-protection": "הגנה לרצפה ומגיני פינות", "trash-bags": "שקיות אשפה", "tool-kit": "ערכת כלים בסיסית", "pull-list": "רשימת משיכה / מלאי ביד", "vault-numbers": "מספרי כספות או יחידות אושרו", "items-verified": "הפריטים אומתו מול המלאי לפני הטעינה", "weather-checked": "מזג האוויר נבדק — ציוד לגשם / פלסטיק נטען במידת הצורך", "load-plan": "תוכנית ההטענה נבדקה עם הצוות", "warehouse-secured-leaving": "המחסן מאובטח / הדלתות נעולות", "walk-in-video": "סרטון כניסה ב-LiveSwitch", "contact-insured": "קשר עם המבוטח", "photos-icat": "תמונות ב-iCat", "secure-furniture": "לאבטח את הרהיטים", "walk-out-video": "סרטון יציאה ב-LiveSwitch", "walk-out-photos": "תמונות יציאה ב-iCat (יום אחרון)", "organize-work-area": "לארגן את אזור העבודה", "secure-truck": "לאבטח את המשאית", "clean-trash": "לנקות את כל האשפה לפני היציאה", "eod-truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "driving-log": "נהג המשאית מילא יומן נהיגה", "contents-vaults": "התכולה הועברה לכספות", "equipment-returned": "הציוד הוחזר למקומו", "liveswitch-uploaded": "סרטוני LiveSwitch הועלו", "icat-uploaded": "תכולת iCat הועלתה לענן", "dock-bay": "לסגור ולאבטח את רציף הטעינה", "eod-warehouse-secured": "המחסן מאובטח / הדלתות נעולות", "charge-batteries": "לטעון את כל סוללות הכלים ומכשיר הסריקה"}, "tWarehouseStart": "שעת התחלה במחסן", "tJobsiteArrival": "שעת הגעה לאתר העבודה", "tJobsiteDeparture": "שעת יציאה מאתר העבודה", "tWarehouseDeparture": "שעת יציאה מהמחסן"}, "zh": {"title": "领队技术员每日检查表", "subtitle": "BK Packz — 离开仓库前填写此表，然后点击“发送给主管”，将 PDF 发送到工作档案中。", "online": "在线", "offline": "离线", "refresh": "刷新", "language": "语言", "installApp": "安装应用", "iosHint": "安装方法：点击“共享”，然后点击“添加到主屏幕”。", "jobDetails": "工作详情", "jobType": "工作类型", "packout": "打包出库", "packback": "送回交付", "date": "日期", "jobNumber": "工作编号", "leadTech": "领队技术员", "customerName": "客户姓名", "hPaperwork": "1 · 工作档案与文件", "hCrew": "2 · 团队", "hTruck": "3 · 卡车与运输", "hSupplies": "4 · 已装载用品", "hPackbackChecks": "4 · 送回检查", "hBefore": "5 · 离开仓库前", "hDuring": "6 · 白天工作中", "hEod": "7 · 当天结束", "hNotes": "备注", "crewNames": "今天的团队 — 姓名", "notesLabel": "办公室需要知道的事项", "progressNote": "未勾选的项目仍会出现在 PDF 中，并标记为<strong>未完成</strong>，以便办公室了解遗漏内容。", "initials": "姓名缩写", "initialsConfirm": "确认所有受保物品均已装车", "initialsAria": "领队技术员姓名缩写，确认所有受保物品均已装车", "eodQuestion": "货物是否已从卡车上卸下？", "yes": "是", "no": "否", "send": "发送给主管", "reset": "重新开始 — 清除此工作的已保存进度", "resetArmed": "再次点击即可清除全部内容", "saveAuto": "自动保存在此手机上", "saved": "已保存 ✓", "pickedUp": "已恢复到上次离开的位置", "allDone": "全部完成 — 可以出发了", "dismiss": "关闭", "share": "共享", "shared": "已共享 ✓", "openPdf": "打开 PDF", "downloadPdf": "下载 PDF", "returnBtn": "返回检查表", "csJob": "工作编号", "csCustomer": "客户", "csType": "工作类型", "csDate": "日期", "csProgress": "进度", "csSubmitted": "已提交", "countTpl": "已勾选 {done}/{total}", "itemsCheckedTpl": "已勾选 {done}/{total} 项", "headingSent": "✓ 检查表已发送给主管", "textSent": "此工作的检查表 PDF 已共享。点击“返回检查表”清除表单并开始下一项工作。", "headingReady": "PDF 已准备好发送", "textReadyTpl": "检查表 PDF（{name}）已在此手机上生成，并在浏览器允许的情况下发送了一份副本到下载文件夹。点击“共享”发送 — 选择邮件、Gmail、信息或其他应用。如果此处无法共享，请点击“打开 PDF”并使用查看器自带的共享或保存按钮，或点击“下载 PDF”保存一份副本以便附加。完成后，点击“返回检查表”清除表单，以便进行下一项工作。", "offlineNote": " 您当前处于离线状态 — 仍可共享；电子邮件将在恢复信号后发送。", "errNoteTpl": " 注意：此手机上的直接共享失败（{err}）— 请改用下面的选项之一。", "toastStartedFresh": "已重新开始 — 此工作的已保存进度已清除。", "toastReset": "检查表已重置 — 可以开始下一项工作了。", "toastShareCancelled": "共享已取消", "toastShareCancelledNotSent": "共享已取消 — 检查表尚未发送", "toastPickMail": "请选择邮件或 Gmail，将 PDF 通过电子邮件发送给 BK Packz。", "errBuildPdf": "无法生成检查表 PDF — 未发送任何内容", "errShareFail": "共享失败 — 请尝试下面的打开 PDF 或下载 PDF", "errAutoDownload": "PDF 自动下载失败；请在下一个屏幕上使用打开 PDF 或下载 PDF", "errNothing": "尚无可共享的内容", "errNothingDetail": "没有等待中的 PDF — 请先点击发送给主管，然后点击共享。", "errNoShare": "此浏览器不支持共享", "phJob": "例如 737-26-00171", "phLead": "您的姓名", "phCustomer": "客户姓名", "phCrew": "例如 Jennifer P.、Ben W.、Alberto G.", "phNotes": "缺少的用品、工作问题、变更…", "items": {"trash-auth": "垃圾/废弃物处理授权已签署（如需处理物品）", "job-details-reviewed": "已在 Proven Jobs 中查看工作详情（地址、范围、联系人）", "customer-called": "已致电客户 — 已确认到达时间段", "liveswitch-setup": "LiveSwitch 项目已设置 / 手机已充电以便录像", "crew-address-time": "每个人都有地址和开始时间", "truck-fueled": "卡车已加油（WEX 卡在车内）", "truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "dollies-straps": "推车、手推车和绑带已装车", "units-confirmed": "UNITS 集装箱送达或取回已确认（如本工作使用）", "boxes-sml": "箱子 — 小号 / 中号 / 大号", "tape-dispensers": "胶带和胶带器", "paper-bubble": "包装纸和气泡膜", "wardrobe-boxes": "衣柜箱", "picture-mirror-boxes": "画框 / 镜子箱", "lamp-boxes": "灯具箱", "dish-pack-boxes": "餐具箱", "furniture-pads": "家具垫 / 毯子", "shrink-wrap": "收缩膜", "labels-markers": "标签和记号笔", "floor-protection": "地面保护和护角", "trash-bags": "垃圾袋", "tool-kit": "基本工具包", "pull-list": "提货清单 / 库存清单已带齐", "vault-numbers": "库房或单元编号已确认", "items-verified": "装车前已按库存核对物品", "weather-checked": "已查看天气 — 如有需要已装载防雨用品 / 塑料布", "load-plan": "已与团队查看装载计划", "warehouse-secured-leaving": "仓库已锁好 / 大门已锁", "walk-in-video": "LiveSwitch 入场视频", "contact-insured": "已与被保险人联系", "photos-icat": "iCat 照片", "secure-furniture": "固定家具", "walk-out-video": "LiveSwitch 离场视频", "walk-out-photos": "iCat 离场照片（最后一天）", "organize-work-area": "整理工作区域", "secure-truck": "锁好卡车", "clean-trash": "离开前清理所有垃圾", "eod-truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "driving-log": "卡车司机已填写驾驶日志", "contents-vaults": "货物已转移到库房", "equipment-returned": "设备已归还到原位", "liveswitch-uploaded": "LiveSwitch 视频已上传", "icat-uploaded": "iCat 内容已上传到云端", "dock-bay": "关闭并锁好装卸区", "eod-warehouse-secured": "仓库已锁好 / 大门已锁", "charge-batteries": "为所有工具电池和扫描设备充电"}, "tWarehouseStart": "仓库开始时间", "tJobsiteArrival": "到达工作现场时间", "tJobsiteDeparture": "离开工作现场时间", "tWarehouseDeparture": "离开仓库时间"}, "it": {"title": "Checklist giornaliera del tecnico capo", "subtitle": "BK Packz — compilala prima di lasciare il magazzino, poi tocca Invia al supervisore per inviare il PDF alla pratica del lavoro.", "online": "Online", "offline": "Offline", "refresh": "Aggiorna", "language": "Lingua", "installApp": "Installa l'app", "iosHint": "Per installare: tocca Condividi, poi “Aggiungi alla schermata Home”.", "jobDetails": "Dettagli del lavoro", "jobType": "Tipo di lavoro", "packout": "Imballaggio", "packback": "Riconsegna", "date": "Data", "jobNumber": "Numero del lavoro", "leadTech": "Tecnico capo", "customerName": "Nome del cliente", "hPaperwork": "1 · Pratica e documenti del lavoro", "hCrew": "2 · Squadra", "hTruck": "3 · Camion e trasporto", "hSupplies": "4 · Materiali caricati", "hPackbackChecks": "4 · Controlli di riconsegna", "hBefore": "5 · Prima di lasciare il magazzino", "hDuring": "6 · Durante la giornata", "hEod": "7 · Fine giornata", "hNotes": "Note", "crewNames": "Squadra di oggi — nomi", "notesLabel": "Tutto ciò che l'ufficio deve sapere", "progressNote": "Gli elementi non spuntati compaiono comunque nel PDF, contrassegnati come <strong>NON FATTO</strong>, così l'ufficio può vedere cosa è mancato.", "initials": "Iniziali", "initialsConfirm": "Confermare che tutti gli articoli assicurati sono stati caricati", "initialsAria": "Iniziali del tecnico capo che conferma che tutti gli articoli assicurati sono stati caricati", "eodQuestion": "Il contenuto è stato scaricato dal camion?", "yes": "Sì", "no": "No", "send": "Invia al supervisore", "reset": "Ricomincia — cancella l'avanzamento salvato di questo lavoro", "resetArmed": "Tocca di nuovo per cancellare tutto", "saveAuto": "Salvataggio automatico su questo telefono", "saved": "Salvato ✓", "pickedUp": "Hai ripreso da dove avevi lasciato", "allDone": "Tutto fatto — pronti a partire", "dismiss": "Chiudi", "share": "Condividi", "shared": "Condiviso ✓", "openPdf": "Apri PDF", "downloadPdf": "Scarica PDF", "returnBtn": "Torna alla checklist", "csJob": "Numero del lavoro", "csCustomer": "Cliente", "csType": "Tipo di lavoro", "csDate": "Data", "csProgress": "Avanzamento", "csSubmitted": "Inviato", "countTpl": "{done} di {total} spuntati", "itemsCheckedTpl": "{done} di {total} elementi spuntati", "headingSent": "✓ Checklist inviata al supervisore", "textSent": "Il PDF della checklist è stato condiviso per questo lavoro. Tocca “Torna alla checklist” per cancellare il modulo e iniziare il lavoro successivo.", "headingReady": "PDF pronto da inviare", "textReadyTpl": "Il PDF della checklist ({name}) è stato generato su questo telefono e una copia è stata inviata ai Download dove questo browser lo consente. Tocca Condividi per inviarlo: scegli Mail, Gmail, Messaggi o un'altra app. Se Condividi non funziona qui, tocca Apri PDF e usa i pulsanti di condivisione o salvataggio del visualizzatore, oppure Scarica PDF per salvare una copia da allegare. Al termine, tocca “Torna alla checklist” per cancellare il modulo per il lavoro successivo.", "offlineNote": " Sei offline: puoi comunque condividere; l'e-mail verrà inviata quando tornerà la copertura.", "errNoteTpl": " Nota: la condivisione diretta non è riuscita su questo telefono ({err}); usa una delle opzioni seguenti.", "toastStartedFresh": "Ricomiciato da capo: l'avanzamento salvato di questo lavoro è stato cancellato.", "toastReset": "Checklist reimpostata: pronti per il lavoro successivo.", "toastShareCancelled": "Condivisione annullata", "toastShareCancelledNotSent": "Condivisione annullata: checklist non ancora inviata", "toastPickMail": "Scegli Mail o Gmail per inviare il PDF a BK Packz via e-mail.", "errBuildPdf": "Impossibile creare il PDF della checklist: non è stato inviato nulla", "errShareFail": "Condivisione non riuscita: prova Apri PDF o Scarica PDF qui sotto", "errAutoDownload": "Il download automatico del PDF non è riuscito; usa Apri PDF o Scarica PDF nella schermata successiva", "errNothing": "Ancora nulla da condividere", "errNothingDetail": "Nessun PDF in attesa: tocca prima Invia al supervisore, poi Condividi.", "errNoShare": "La condivisione non è disponibile in questo browser", "phJob": "es. 737-26-00171", "phLead": "Il tuo nome", "phCustomer": "Nome del cliente", "phCrew": "es. Jennifer P., Ben W., Alberto G.", "phNotes": "Materiali mancanti, problemi del lavoro, modifiche…", "items": {"trash-auth": "Autorizzazione allo smaltimento / rifiuti firmata (se vengono smaltiti articoli)", "job-details-reviewed": "Dettagli del lavoro verificati (indirizzo, ambito, contatto) in Proven Jobs", "customer-called": "Cliente chiamato — fascia di arrivo confermata", "liveswitch-setup": "Progetto LiveSwitch creato / telefono carico per registrare", "crew-address-time": "Tutti hanno l'indirizzo e l'orario di inizio", "truck-fueled": "Camion rifornito (carta WEX nel camion)", "truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "dollies-straps": "Carrelli, carrello a mano e cinghie caricati", "units-confirmed": "Consegna o ritiro del container UNITS confermato (se questo lavoro ne usa uno)", "boxes-sml": "Scatole — piccole / medie / grandi", "tape-dispensers": "Nastro adesivo e dispenser", "paper-bubble": "Carta da imballaggio e pluriball", "wardrobe-boxes": "Scatole guardaroba", "picture-mirror-boxes": "Scatole per quadri / specchi", "lamp-boxes": "Scatole per lampade", "dish-pack-boxes": "Scatole per stoviglie", "furniture-pads": "Coperte / protezioni per mobili", "shrink-wrap": "Pellicola estensibile", "labels-markers": "Etichette e pennarelli", "floor-protection": "Protezione per pavimenti e paraspigoli", "trash-bags": "Sacchi per la spazzatura", "tool-kit": "Kit di attrezzi di base", "pull-list": "Elenco di prelievo / inventario a portata di mano", "vault-numbers": "Numeri di caveau o unità confermati", "items-verified": "Articoli verificati rispetto all'inventario prima del carico", "weather-checked": "Meteo controllato — materiali per la pioggia / plastica caricati se necessario", "load-plan": "Piano di carico verificato con la squadra", "warehouse-secured-leaving": "Magazzino messo in sicurezza / porte chiuse a chiave", "walk-in-video": "Video di ingresso su LiveSwitch", "contact-insured": "Contatto con l'assicurato", "photos-icat": "Foto su iCat", "secure-furniture": "Mettere in sicurezza i mobili", "walk-out-video": "Video di uscita su LiveSwitch", "walk-out-photos": "Foto di uscita su iCat (ultimo giorno)", "organize-work-area": "Organizzare l'area di lavoro", "secure-truck": "Mettere in sicurezza il camion", "clean-trash": "Pulire tutta la spazzatura prima di partire", "eod-truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "driving-log": "L'autista del camion ha compilato il registro di guida", "contents-vaults": "Contenuto trasferito nei caveau", "equipment-returned": "Attrezzatura riportata al suo posto", "liveswitch-uploaded": "Video LiveSwitch caricati", "icat-uploaded": "Contenuti iCat caricati sul cloud", "dock-bay": "Chiudere e mettere in sicurezza la banchina di carico", "eod-warehouse-secured": "Magazzino messo in sicurezza / porte chiuse a chiave", "charge-batteries": "Caricare tutte le batterie degli utensili e il dispositivo di scansione"}, "tWarehouseStart": "Orario di inizio in magazzino", "tJobsiteArrival": "Orario di arrivo in cantiere", "tJobsiteDeparture": "Orario di partenza dal cantiere", "tWarehouseDeparture": "Orario di partenza dal magazzino"}, "fr": {"title": "Liste de contrôle quotidienne du technicien chef", "subtitle": "BK Packz — remplissez-la avant de quitter l'entrepôt, puis appuyez sur Envoyer au superviseur pour envoyer le PDF au dossier du chantier.", "online": "En ligne", "offline": "Hors ligne", "refresh": "Actualiser", "language": "Langue", "installApp": "Installer l'application", "iosHint": "Pour installer : appuyez sur Partager, puis sur « Ajouter à l'écran d'accueil ».", "jobDetails": "Détails du chantier", "jobType": "Type de chantier", "packout": "Emballage", "packback": "Retour / livraison", "date": "Date", "jobNumber": "Numéro de chantier", "leadTech": "Technicien chef", "customerName": "Nom du client", "hPaperwork": "1 · Dossier et documents du chantier", "hCrew": "2 · Équipe", "hTruck": "3 · Camion et transport", "hSupplies": "4 · Fournitures chargées", "hPackbackChecks": "4 · Vérifications de retour", "hBefore": "5 · Avant de quitter l'entrepôt", "hDuring": "6 · Pendant la journée", "hEod": "7 · Fin de journée", "hNotes": "Remarques", "crewNames": "Équipe du jour — noms", "notesLabel": "Tout ce que le bureau doit savoir", "progressNote": "Les éléments non cochés apparaissent quand même dans le PDF, marqués <strong>NON FAIT</strong>, pour que le bureau voie ce qui a été manqué.", "initials": "Initiales", "initialsConfirm": "Confirmer que tous les articles assurés sont chargés", "initialsAria": "Initiales du technicien chef confirmant que tous les articles assurés sont chargés", "eodQuestion": "Le contenu a-t-il été déchargé du camion ?", "yes": "Oui", "no": "Non", "send": "Envoyer au superviseur", "reset": "Recommencer — effacer la progression enregistrée de ce chantier", "resetArmed": "Appuyez à nouveau pour tout effacer", "saveAuto": "Enregistrement automatique sur ce téléphone", "saved": "Enregistré ✓", "pickedUp": "Vous avez repris là où vous vous étiez arrêté", "allDone": "Tout est fait — prêt à partir", "dismiss": "Fermer", "share": "Partager", "shared": "Partagé ✓", "openPdf": "Ouvrir le PDF", "downloadPdf": "Télécharger le PDF", "returnBtn": "Retour à la liste", "csJob": "Numéro de chantier", "csCustomer": "Client", "csType": "Type de chantier", "csDate": "Date", "csProgress": "Progression", "csSubmitted": "Envoyé", "countTpl": "{done} sur {total} cochés", "itemsCheckedTpl": "{done} sur {total} éléments cochés", "headingSent": "✓ Liste envoyée au superviseur", "textSent": "Le PDF de la liste a été partagé pour ce chantier. Appuyez sur « Retour à la liste » pour effacer le formulaire et commencer le chantier suivant.", "headingReady": "PDF prêt à envoyer", "textReadyTpl": "Le PDF de la liste ({name}) a été généré sur ce téléphone, et une copie a été envoyée dans les Téléchargements là où ce navigateur le permet. Appuyez sur Partager pour l'envoyer : choisissez Mail, Gmail, Messages ou une autre application. Si Partager ne fonctionne pas ici, appuyez sur Ouvrir le PDF et utilisez les boutons de partage ou d'enregistrement du lecteur, ou sur Télécharger le PDF pour enregistrer une copie à joindre. Lorsque vous avez terminé, appuyez sur « Retour à la liste » pour effacer le formulaire pour le chantier suivant.", "offlineNote": " Vous êtes hors ligne : vous pouvez quand même partager ; l'e-mail partira dès le retour de la couverture.", "errNoteTpl": " Remarque : le partage direct a échoué sur ce téléphone ({err}) ; utilisez l'une des options ci-dessous.", "toastStartedFresh": "Recommencé à zéro : la progression enregistrée de ce chantier a été effacée.", "toastReset": "Liste réinitialisée : prêt pour le chantier suivant.", "toastShareCancelled": "Partage annulé", "toastShareCancelledNotSent": "Partage annulé : liste pas encore envoyée", "toastPickMail": "Choisissez Mail ou Gmail pour envoyer le PDF à BK Packz par e-mail.", "errBuildPdf": "Impossible de créer le PDF de la liste : rien n'a été envoyé", "errShareFail": "Échec du partage : essayez Ouvrir le PDF ou Télécharger le PDF ci-dessous", "errAutoDownload": "Le téléchargement automatique du PDF a échoué ; utilisez Ouvrir le PDF ou Télécharger le PDF sur l'écran suivant", "errNothing": "Rien à partager pour le moment", "errNothingDetail": "Aucun PDF en attente : appuyez d'abord sur Envoyer au superviseur, puis sur Partager.", "errNoShare": "Le partage n'est pas disponible dans ce navigateur", "phJob": "ex. 737-26-00171", "phLead": "Votre nom", "phCustomer": "Nom du client", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Fournitures manquantes, problèmes du chantier, changements…", "items": {"trash-auth": "Autorisation d'élimination / de mise au rebut signée (si des articles sont éliminés)", "job-details-reviewed": "Détails du chantier vérifiés (adresse, étendue, contact) dans Proven Jobs", "customer-called": "Client appelé — créneau d'arrivée confirmé", "liveswitch-setup": "Projet LiveSwitch créé / téléphone chargé pour enregistrer", "crew-address-time": "Tout le monde a l'adresse et l'heure de début", "truck-fueled": "Camion ravitaillé (carte WEX dans le camion)", "truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "dollies-straps": "Diables, chariot à main et sangles chargés", "units-confirmed": "Livraison ou enlèvement du conteneur UNITS confirmé (si ce chantier en utilise un)", "boxes-sml": "Cartons — petits / moyens / grands", "tape-dispensers": "Ruban adhésif et dévidoirs", "paper-bubble": "Papier d'emballage et papier bulle", "wardrobe-boxes": "Cartons penderie", "picture-mirror-boxes": "Cartons pour tableaux / miroirs", "lamp-boxes": "Cartons pour lampes", "dish-pack-boxes": "Cartons pour vaisselle", "furniture-pads": "Couvertures / protections pour meubles", "shrink-wrap": "Film étirable", "labels-markers": "Étiquettes et marqueurs", "floor-protection": "Protection de sol et protège-coins", "trash-bags": "Sacs poubelle", "tool-kit": "Boîte à outils de base", "pull-list": "Liste de prélèvement / inventaire en main", "vault-numbers": "Numéros de box ou d'unité confirmés", "items-verified": "Articles vérifiés par rapport à l'inventaire avant le chargement", "weather-checked": "Météo vérifiée — fournitures de pluie / plastique chargées si nécessaire", "load-plan": "Plan de chargement revu avec l'équipe", "warehouse-secured-leaving": "Entrepôt sécurisé / portes verrouillées", "walk-in-video": "Vidéo d'entrée sur LiveSwitch", "contact-insured": "Contact avec l'assuré", "photos-icat": "Photos sur iCat", "secure-furniture": "Sécuriser les meubles", "walk-out-video": "Vidéo de sortie sur LiveSwitch", "walk-out-photos": "Photos de sortie sur iCat (dernier jour)", "organize-work-area": "Organiser la zone de travail", "secure-truck": "Sécuriser le camion", "clean-trash": "Nettoyer tous les déchets avant de partir", "eod-truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "driving-log": "Le conducteur du camion a rempli le journal de conduite", "contents-vaults": "Contenu transféré dans les box", "equipment-returned": "Équipement remis à sa place", "liveswitch-uploaded": "Vidéos LiveSwitch téléversées", "icat-uploaded": "Contenus iCat téléversés dans le cloud", "dock-bay": "Fermer et sécuriser le quai de chargement", "eod-warehouse-secured": "Entrepôt sécurisé / portes verrouillées", "charge-batteries": "Charger toutes les batteries d'outils et l'appareil de numérisation"}, "tWarehouseStart": "Heure de début à l'entrepôt", "tJobsiteArrival": "Heure d'arrivée sur le chantier", "tJobsiteDeparture": "Heure de départ du chantier", "tWarehouseDeparture": "Heure de départ de l'entrepôt"}, "pt": {"title": "Lista de verificação diária do técnico líder", "subtitle": "BK Packz — preencha isto antes de sair do armazém e depois toque em Enviar ao supervisor para enviar o PDF para o arquivo do trabalho.", "online": "Online", "offline": "Offline", "refresh": "Atualizar", "language": "Idioma", "installApp": "Instalar o aplicativo", "iosHint": "Para instalar: toque em Compartilhar e depois em “Adicionar à Tela de Início”.", "jobDetails": "Detalhes do trabalho", "jobType": "Tipo de trabalho", "packout": "Embalagem", "packback": "Devolução / entrega", "date": "Data", "jobNumber": "Número do trabalho", "leadTech": "Técnico líder", "customerName": "Nome do cliente", "hPaperwork": "1 · Arquivo e documentos do trabalho", "hCrew": "2 · Equipe", "hTruck": "3 · Caminhão e transporte", "hSupplies": "4 · Suprimentos carregados", "hPackbackChecks": "4 · Verificações de devolução", "hBefore": "5 · Antes de sair do armazém", "hDuring": "6 · Durante o dia", "hEod": "7 · Fim do dia", "hNotes": "Observações", "crewNames": "Equipe de hoje — nomes", "notesLabel": "Tudo o que o escritório deve saber", "progressNote": "Os itens não marcados ainda aparecem no PDF, marcados como <strong>NÃO FEITO</strong>, para que o escritório veja o que foi esquecido.", "initials": "Iniciais", "initialsConfirm": "Confirmar que todos os itens segurados foram carregados", "initialsAria": "Iniciais do técnico líder confirmando que todos os itens segurados foram carregados", "eodQuestion": "O conteúdo foi descarregado do caminhão?", "yes": "Sim", "no": "Não", "send": "Enviar ao supervisor", "reset": "Recomeçar — apagar o progresso salvo deste trabalho", "resetArmed": "Toque novamente para apagar tudo", "saveAuto": "Salva automaticamente neste telefone", "saved": "Salvo ✓", "pickedUp": "Você continuou de onde parou", "allDone": "Tudo feito — pronto para sair", "dismiss": "Dispensar", "share": "Compartilhar", "shared": "Compartilhado ✓", "openPdf": "Abrir PDF", "downloadPdf": "Baixar PDF", "returnBtn": "Voltar à lista", "csJob": "Número do trabalho", "csCustomer": "Cliente", "csType": "Tipo de trabalho", "csDate": "Data", "csProgress": "Progresso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} itens marcados", "headingSent": "✓ Lista enviada ao supervisor", "textSent": "O PDF da lista foi compartilhado para este trabalho. Toque em “Voltar à lista” para limpar o formulário e começar o próximo trabalho.", "headingReady": "PDF pronto para enviar", "textReadyTpl": "O PDF da lista ({name}) foi gerado neste telefone e uma cópia foi enviada para Downloads onde este navegador permite. Toque em Compartilhar para enviá-lo: escolha E-mail, Gmail, Mensagens ou outro aplicativo. Se Compartilhar não funcionar aqui, toque em Abrir PDF e use os botões de compartilhar ou salvar do visualizador, ou Baixar PDF para salvar uma cópia e anexá-la. Quando terminar, toque em “Voltar à lista” para limpar o formulário para o próximo trabalho.", "offlineNote": " Você está offline: ainda pode compartilhar; o e-mail será enviado quando a cobertura voltar.", "errNoteTpl": " Observação: o compartilhamento direto falhou neste telefone ({err}); use uma das opções abaixo.", "toastStartedFresh": "Recomeçado do zero: o progresso salvo deste trabalho foi apagado.", "toastReset": "Lista redefinida: pronta para o próximo trabalho.", "toastShareCancelled": "Compartilhamento cancelado", "toastShareCancelledNotSent": "Compartilhamento cancelado: a lista ainda não foi enviada", "toastPickMail": "Escolha E-mail ou Gmail para enviar o PDF para a BK Packz.", "errBuildPdf": "Não foi possível criar o PDF da lista: nada foi enviado", "errShareFail": "Falha no compartilhamento: tente Abrir PDF ou Baixar PDF abaixo", "errAutoDownload": "O download automático do PDF falhou; use Abrir PDF ou Baixar PDF na próxima tela", "errNothing": "Ainda não há nada para compartilhar", "errNothingDetail": "Nenhum PDF aguardando: toque primeiro em Enviar ao supervisor e depois em Compartilhar.", "errNoShare": "O compartilhamento não está disponível neste navegador", "phJob": "ex. 737-26-00171", "phLead": "Seu nome", "phCustomer": "Nome do cliente", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Suprimentos faltando, problemas do trabalho, alterações…", "items": {"trash-auth": "Autorização de descarte / lixo assinada (se itens forem descartados)", "job-details-reviewed": "Detalhes do trabalho revisados (endereço, escopo, contato) no Proven Jobs", "customer-called": "Cliente contatado — janela de chegada confirmada", "liveswitch-setup": "Projeto LiveSwitch configurado / telefone carregado para gravar", "crew-address-time": "Todos têm o endereço e o horário de início", "truck-fueled": "Caminhão abastecido (cartão WEX no caminhão)", "truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "dollies-straps": "Carrinhos, carrinho de mão e cintas carregados", "units-confirmed": "Entrega ou retirada do contêiner UNITS confirmada (se este trabalho usar um)", "boxes-sml": "Caixas — pequenas / médias / grandes", "tape-dispensers": "Fita adesiva e aplicadores", "paper-bubble": "Papel de embalagem e plástico bolha", "wardrobe-boxes": "Caixas guarda-roupa", "picture-mirror-boxes": "Caixas para quadros / espelhos", "lamp-boxes": "Caixas para luminárias", "dish-pack-boxes": "Caixas para louças", "furniture-pads": "Protetores / cobertores para móveis", "shrink-wrap": "Filme stretch", "labels-markers": "Etiquetas e marcadores", "floor-protection": "Proteção para pisos e protetores de canto", "trash-bags": "Sacos de lixo", "tool-kit": "Kit básico de ferramentas", "pull-list": "Lista de separação / inventário em mãos", "vault-numbers": "Números de cofres ou unidades confirmados", "items-verified": "Itens verificados em relação ao inventário antes do carregamento", "weather-checked": "Clima verificado — suprimentos para chuva / plástico carregados se necessário", "load-plan": "Plano de carga revisado com a equipe", "warehouse-secured-leaving": "Armazém trancado / portas fechadas", "walk-in-video": "Vídeo de entrada no LiveSwitch", "contact-insured": "Contato com o segurado", "photos-icat": "Fotos no iCat", "secure-furniture": "Prender os móveis", "walk-out-video": "Vídeo de saída no LiveSwitch", "walk-out-photos": "Fotos de saída no iCat (último dia)", "organize-work-area": "Organizar a área de trabalho", "secure-truck": "Proteger o caminhão", "clean-trash": "Limpar todo o lixo antes de sair", "eod-truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "driving-log": "O motorista do caminhão preencheu o registro de condução", "contents-vaults": "Conteúdo transferido para os cofres", "equipment-returned": "Equipamento devolvido ao seu lugar", "liveswitch-uploaded": "Vídeos do LiveSwitch enviados", "icat-uploaded": "Conteúdo do iCat enviado para a nuvem", "dock-bay": "Fechar e proteger a doca de carga", "eod-warehouse-secured": "Armazém trancado / portas fechadas", "charge-batteries": "Carregar todas as baterias das ferramentas e o dispositivo de digitalização"}, "tWarehouseStart": "Horário de início no armazém", "tJobsiteArrival": "Horário de chegada ao local de trabalho", "tJobsiteDeparture": "Horário de saída do local de trabalho", "tWarehouseDeparture": "Horário de saída do armazém"}};
+        var I18N = {"en": {"title": "Lead Tech Daily Checklist", "subtitle": "BK Packz — fill this out before leaving the warehouse, then tap Send to Supervisor to send the PDF to the job file.", "online": "Online", "offline": "Offline", "refresh": "Refresh", "language": "Language", "installApp": "Install app", "iosHint": "To install: tap Share, then “Add to Home Screen.”", "jobDetails": "Job details", "jobType": "Job type", "packout": "Packout", "packback": "Packback", "date": "Date", "jobNumber": "Job number", "leadTech": "Lead technician", "customerName": "Customer name", "hPaperwork": "1 · Job file & paperwork", "hCrew": "2 · Crew", "hTruck": "3 · Truck & transport", "hSupplies": "4 · Supplies loaded", "hPackbackChecks": "4 · Packback checks", "hBefore": "5 · Before leaving the warehouse", "hDuring": "6 · During the day", "hEod": "7 · End of day", "hNotes": "Notes", "crewNames": "Crew for today — names", "notesLabel": "Anything the office should know", "progressNote": "Unchecked items still appear on the PDF, marked <strong>NOT DONE</strong> — so the office can see what was missed.", "initials": "Initials", "initialsConfirm": "Confirm all insured items are loaded", "initialsAria": "Lead technician initials confirming all insured items are loaded", "eodQuestion": "Were contents unloaded from truck?", "yes": "Yes", "no": "No", "send": "Send to Supervisor", "reset": "Start over — clear this job's saved progress", "resetArmed": "Tap again to clear everything", "saveAuto": "Auto-saves on this phone", "saved": "Saved ✓", "pickedUp": "Picked up where you left off", "allDone": "All done — ready to roll", "dismiss": "Dismiss", "share": "Share", "shared": "Shared ✓", "openPdf": "Open PDF", "downloadPdf": "Download PDF", "returnBtn": "Return to checklist", "csJob": "Job number", "csCustomer": "Customer", "csType": "Job type", "csDate": "Date", "csProgress": "Progress", "csSubmitted": "Submitted", "countTpl": "{done} of {total} checked", "itemsCheckedTpl": "{done} of {total} items checked", "headingSent": "✓ Checklist sent to supervisor", "textSent": "The checklist PDF was shared for this job. Tap “Return to checklist” to clear the form and start the next job.", "headingReady": "PDF ready to send", "textReadyTpl": "The checklist PDF ({name}) was generated on this phone, and a copy was sent to Downloads where this browser allows it. Tap Share to send it — pick Mail, Gmail, Messages, or another app. If Share doesn't work here, tap Open PDF and use the viewer's own share or save buttons, or Download PDF to save a copy you can attach. When you're done, tap “Return to checklist” to clear the form for the next job.", "offlineNote": " You're offline — you can still share; email sends when you're back in coverage.", "errNoteTpl": " Note: direct sharing failed on this phone ({err}) — use one of the options below instead.", "toastStartedFresh": "Started fresh — this job's saved progress was cleared.", "toastReset": "Checklist reset — ready for the next job.", "toastShareCancelled": "Share cancelled", "toastShareCancelledNotSent": "Share cancelled — checklist not sent yet", "toastPickMail": "Pick Mail or Gmail to email the PDF to BK Packz.", "errBuildPdf": "Couldn't build the checklist PDF — nothing was sent", "errShareFail": "Sharing failed — try Open PDF or Download PDF below", "errAutoDownload": "The automatic PDF download failed; use Open PDF or Download PDF on the next screen", "errNothing": "Nothing to share yet", "errNothingDetail": "No PDF is waiting — tap Send to Supervisor first, then Share.", "errNoShare": "Sharing isn't available in this browser", "phJob": "e.g. 737-26-00171", "phLead": "Your name", "phCustomer": "Customer name", "phCrew": "e.g. Jennifer P., Ben W., Alberto G.", "phNotes": "Missing supplies, job concerns, changes…", "items": {"trash-auth": "Trash / disposal authorization signed (if items are being disposed)", "job-details-reviewed": "Job details reviewed (address, scope, contact) in Proven Jobs", "customer-called": "Customer called — arrival window confirmed", "liveswitch-setup": "LiveSwitch project set up / phone charged for recording", "crew-address-time": "Everyone has the address and start time", "truck-fueled": "Truck fueled (WEX card in truck)", "truck-checked": "Truck checked: lights, tires, liftgate / ramp", "dollies-straps": "Dollies, hand truck, and straps loaded", "units-confirmed": "UNITS container delivery or pickup confirmed (if this job uses one)", "boxes-sml": "Boxes — small / medium / large", "tape-dispensers": "Tape and dispensers", "paper-bubble": "Packing paper and bubble wrap", "wardrobe-boxes": "Wardrobe boxes", "picture-mirror-boxes": "Picture / mirror boxes", "lamp-boxes": "Lamp boxes", "dish-pack-boxes": "Dish pack boxes", "furniture-pads": "Furniture pads / blankets", "shrink-wrap": "Shrink wrap", "labels-markers": "Labels and markers", "floor-protection": "Floor protection and corner protectors", "trash-bags": "Trash bags", "tool-kit": "Basic tool kit", "pull-list": "Pull list / inventory list in hand", "vault-numbers": "Vault or unit numbers confirmed", "items-verified": "Items verified against inventory before loading", "weather-checked": "Weather checked — rain supplies / plastic loaded if needed", "load-plan": "Load plan reviewed with crew", "warehouse-secured-leaving": "Warehouse secured / doors locked", "walk-in-video": "Walk-in video on LiveSwitch", "contact-insured": "Contact with insured", "photos-icat": "Photos on iCat", "secure-furniture": "Secure furniture", "walk-out-video": "Walk-out video on LiveSwitch", "walk-out-photos": "Walk-out photos on iCat (final day)", "organize-work-area": "Organize work area", "secure-truck": "Secure truck", "clean-trash": "Clean all trash before leaving", "lights-off-doors-locked": "Turn all lights off, lock all doors", "eod-truck-checked": "Truck checked: lights, tires, liftgate / ramp", "driving-log": "Truck driver filled out driving log", "contents-vaults": "Contents transferred to vaults", "equipment-returned": "Equipment returned to its place", "liveswitch-uploaded": "LiveSwitch videos uploaded", "icat-uploaded": "iCat contents uploaded to cloud", "dock-bay": "Close and secure loading dock bay", "eod-warehouse-secured": "Warehouse secured / doors locked", "charge-batteries": "Charge all tool batteries and scanning device"}, "tWarehouseStart": "Warehouse start time", "tJobsiteArrival": "Jobsite arrival time", "tJobsiteDeparture": "Jobsite departure time", "tWarehouseDeparture": "Warehouse departure time", "hSignature": "Lead tech signature", "sigAttest": "I confirm that all tasks marked on this list have been completed, and any task not marked was not required.", "sigLeadLabel": "Lead Tech", "sigNameLabel": "Signature — type your full name", "sigNamePh": "Full name", "sigSignBtn": "Sign", "sigClearBtn": "Clear & re-sign", "sigUnsigned": "Not signed yet. A lead tech signature is required before sending.", "signedByTpl": "Signed by {name} — {when}", "errSigRequired": "A lead tech signature is required before sending. Sign at the bottom of the checklist.", "errSigName": "Type your full name as your signature first.", "curLoc": "Current location", "curLocUnavailable": "unavailable"}, "es": {"title": "Lista diaria del técnico líder", "subtitle": "BK Packz — complete esto antes de salir del almacén y luego toque Enviar al supervisor para enviar el PDF al archivo del trabajo.", "online": "En línea", "offline": "Sin conexión", "refresh": "Actualizar", "language": "Idioma", "installApp": "Instalar la aplicación", "iosHint": "Para instalar: toque Compartir y luego «Añadir a pantalla de inicio».", "jobDetails": "Detalles del trabajo", "jobType": "Tipo de trabajo", "packout": "Empaque", "packback": "Entrega", "date": "Fecha", "jobNumber": "Número de trabajo", "leadTech": "Técnico líder", "customerName": "Nombre del cliente", "hPaperwork": "1 · Archivo y documentos del trabajo", "hCrew": "2 · Equipo", "hTruck": "3 · Camión y transporte", "hSupplies": "4 · Suministros cargados", "hPackbackChecks": "4 · Verificaciones de entrega", "hBefore": "5 · Antes de salir del almacén", "hDuring": "6 · Durante el día", "hEod": "7 · Fin del día", "hNotes": "Notas", "crewNames": "Equipo de hoy — nombres", "notesLabel": "Todo lo que la oficina debe saber", "progressNote": "Los artículos sin marcar también aparecen en el PDF, marcados como <strong>NO HECHO</strong>, para que la oficina vea lo que faltó.", "initials": "Iniciales", "initialsConfirm": "Confirmar que todos los artículos asegurados están cargados", "initialsAria": "Iniciales del técnico líder que confirma que todos los artículos asegurados están cargados", "eodQuestion": "¿Se descargó el contenido del camión?", "yes": "Sí", "no": "No", "send": "Enviar al supervisor", "reset": "Empezar de nuevo — borrar el progreso guardado de este trabajo", "resetArmed": "Toque de nuevo para borrar todo", "saveAuto": "Se guarda automáticamente en este teléfono", "saved": "Guardado ✓", "pickedUp": "Continuaste donde lo dejaste", "allDone": "Todo listo — a trabajar", "dismiss": "Descartar", "share": "Compartir", "shared": "Compartido ✓", "openPdf": "Abrir PDF", "downloadPdf": "Descargar PDF", "returnBtn": "Volver a la lista", "csJob": "Número de trabajo", "csCustomer": "Cliente", "csType": "Tipo de trabajo", "csDate": "Fecha", "csProgress": "Progreso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} artículos marcados", "headingSent": "✓ Lista enviada al supervisor", "textSent": "El PDF de la lista se compartió para este trabajo. Toque «Volver a la lista» para limpiar el formulario y empezar el siguiente trabajo.", "headingReady": "PDF listo para enviar", "textReadyTpl": "El PDF de la lista ({name}) se generó en este teléfono y se envió una copia a Descargas donde este navegador lo permite. Toque Compartir para enviarlo: elija Correo, Gmail, Mensajes u otra aplicación. Si Compartir no funciona aquí, toque Abrir PDF y use los botones de compartir o guardar del visor, o Descargar PDF para guardar una copia y adjuntarla. Cuando termine, toque «Volver a la lista» para limpiar el formulario para el siguiente trabajo.", "offlineNote": " Está sin conexión: aún puede compartir; el correo se enviará cuando recupere la cobertura.", "errNoteTpl": " Nota: el uso compartido directo falló en este teléfono ({err}); use una de las opciones siguientes.", "toastStartedFresh": "Empezamos de nuevo: se borró el progreso guardado de este trabajo.", "toastReset": "Lista reiniciada: lista para el siguiente trabajo.", "toastShareCancelled": "Compartir cancelado", "toastShareCancelledNotSent": "Compartir cancelado: la lista aún no se envió", "toastPickMail": "Elija Correo o Gmail para enviar el PDF a BK Packz.", "errBuildPdf": "No se pudo crear el PDF de la lista: no se envió nada", "errShareFail": "Error al compartir: pruebe Abrir PDF o Descargar PDF abajo", "errAutoDownload": "La descarga automática del PDF falló; use Abrir PDF o Descargar PDF en la siguiente pantalla", "errNothing": "Aún no hay nada para compartir", "errNothingDetail": "No hay ningún PDF en espera: primero toque Enviar al supervisor y luego Compartir.", "errNoShare": "Compartir no está disponible en este navegador", "phJob": "ej. 737-26-00171", "phLead": "Su nombre", "phCustomer": "Nombre del cliente", "phCrew": "ej. Jennifer P., Ben W., Alberto G.", "phNotes": "Suministros faltantes, problemas del trabajo, cambios…", "items": {"trash-auth": "Autorización de basura / desecho firmada (si se van a desechar artículos)", "job-details-reviewed": "Detalles del trabajo revisados (dirección, alcance, contacto) en Proven Jobs", "customer-called": "Cliente llamado — horario de llegada confirmado", "liveswitch-setup": "Proyecto de LiveSwitch creado / teléfono cargado para grabar", "crew-address-time": "Todos tienen la dirección y la hora de inicio", "truck-fueled": "Camión con combustible (tarjeta WEX en el camión)", "truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "dollies-straps": "Carretillas, carrito de mano y correas cargados", "units-confirmed": "Entrega o recogida del contenedor UNITS confirmada (si este trabajo usa uno)", "boxes-sml": "Cajas — pequeñas / medianas / grandes", "tape-dispensers": "Cinta adhesiva y dispensadores", "paper-bubble": "Papel de embalaje y plástico de burbujas", "wardrobe-boxes": "Cajas para ropa (guardarropa)", "picture-mirror-boxes": "Cajas para cuadros / espejos", "lamp-boxes": "Cajas para lámparas", "dish-pack-boxes": "Cajas para vajilla", "furniture-pads": "Protectores / mantas para muebles", "shrink-wrap": "Plástico retráctil (film)", "labels-markers": "Etiquetas y marcadores", "floor-protection": "Protección para pisos y protectores de esquinas", "trash-bags": "Bolsas de basura", "tool-kit": "Kit básico de herramientas", "pull-list": "Lista de extracción / inventario en mano", "vault-numbers": "Números de bóveda o unidad confirmados", "items-verified": "Artículos verificados contra el inventario antes de cargar", "weather-checked": "Clima revisado — suministros para lluvia / plástico cargados si es necesario", "load-plan": "Plan de carga revisado con el equipo", "warehouse-secured-leaving": "Almacén asegurado / puertas cerradas con llave", "walk-in-video": "Video de entrada en LiveSwitch", "contact-insured": "Contacto con el asegurado", "photos-icat": "Fotos en iCat", "secure-furniture": "Asegurar los muebles", "walk-out-video": "Video de salida en LiveSwitch", "walk-out-photos": "Fotos de salida en iCat (último día)", "organize-work-area": "Organizar el área de trabajo", "secure-truck": "Asegurar el camión", "clean-trash": "Limpiar toda la basura antes de salir", "lights-off-doors-locked": "Apagar todas las luces, cerrar todas las puertas con llave", "eod-truck-checked": "Camión revisado: luces, llantas, puerta elevadora / rampa", "driving-log": "El conductor del camión completó el registro de manejo", "contents-vaults": "Contenido trasladado a las bóvedas", "equipment-returned": "Equipo devuelto a su lugar", "liveswitch-uploaded": "Videos de LiveSwitch subidos", "icat-uploaded": "Contenido de iCat subido a la nube", "dock-bay": "Cerrar y asegurar el muelle de carga", "eod-warehouse-secured": "Almacén asegurado / puertas cerradas con llave", "charge-batteries": "Cargar todas las baterías de herramientas y el dispositivo de escaneo"}, "tWarehouseStart": "Hora de inicio en el almacén", "tJobsiteArrival": "Hora de llegada al lugar de trabajo", "tJobsiteDeparture": "Hora de salida del lugar de trabajo", "tWarehouseDeparture": "Hora de salida del almacén", "hSignature": "Firma del técnico líder", "sigAttest": "Confirmo que todas las tareas marcadas en esta lista se han completado, y que cualquier tarea no marcada no era necesaria.", "sigLeadLabel": "Técnico líder", "sigNameLabel": "Firma — escriba su nombre completo", "sigNamePh": "Nombre completo", "sigSignBtn": "Firmar", "sigClearBtn": "Borrar y firmar de nuevo", "sigUnsigned": "Aún no está firmado. Se requiere la firma del técnico líder antes de enviar.", "signedByTpl": "Firmado por {name} — {when}", "errSigRequired": "Se requiere la firma del técnico líder antes de enviar. Firme al final de la lista.", "errSigName": "Primero escriba su nombre completo como firma.", "curLoc": "Ubicación actual", "curLocUnavailable": "no disponible"}, "he": {"title": "רשימת הבדיקות היומית של הטכנאי הראשי", "subtitle": "BK Packz — מלאו זאת לפני היציאה מהמחסן, ולאחר מכן הקישו על שליחה למפקח כדי לשלוח את ה-PDF לתיק העבודה.", "online": "מחובר", "offline": "לא מחובר", "refresh": "רענון", "language": "שפה", "installApp": "התקנת האפליקציה", "iosHint": "להתקנה: הקישו על שיתוף ולאחר מכן על “הוספה למסך הבית”.", "jobDetails": "פרטי העבודה", "jobType": "סוג העבודה", "packout": "אריזה והוצאה", "packback": "החזרה ופריקה", "date": "תאריך", "jobNumber": "מספר עבודה", "leadTech": "טכנאי ראשי", "customerName": "שם הלקוח", "hPaperwork": "1 · תיק עבודה ומסמכים", "hCrew": "2 · צוות", "hTruck": "3 · משאית והובלה", "hSupplies": "4 · ציוד שנטען", "hPackbackChecks": "4 · בדיקות החזרה", "hBefore": "5 · לפני היציאה מהמחסן", "hDuring": "6 · במהלך היום", "hEod": "7 · סוף היום", "hNotes": "הערות", "crewNames": "צוות היום — שמות", "notesLabel": "כל מה שהמשרד צריך לדעת", "progressNote": "פריטים שלא סומנו עדיין מופיעים ב-PDF ומסומנים כ<strong>לא בוצע</strong> — כדי שהמשרד יראה מה הוחמץ.", "initials": "ראשי תיבות", "initialsConfirm": "לאשר שכל הפריטים המבוטחים נטענו", "initialsAria": "ראשי התיבות של הטכנאי הראשי המאשר שכל הפריטים המבוטחים נטענו", "eodQuestion": "האם התכולה נפרקה מהמשאית?", "yes": "כן", "no": "לא", "send": "שליחה למפקח", "reset": "התחלה מחדש — מחיקת ההתקדמות השמורה של עבודה זו", "resetArmed": "הקישו שוב כדי למחוק הכול", "saveAuto": "נשמר אוטומטית בטלפון זה", "saved": "נשמר ✓", "pickedUp": "המשכתם מהמקום שבו הפסקתם", "allDone": "הכול בוצע — מוכנים לצאת", "dismiss": "סגירה", "share": "שיתוף", "shared": "שותף ✓", "openPdf": "פתיחת PDF", "downloadPdf": "הורדת PDF", "returnBtn": "חזרה לרשימה", "csJob": "מספר עבודה", "csCustomer": "לקוח", "csType": "סוג העבודה", "csDate": "תאריך", "csProgress": "התקדמות", "csSubmitted": "נשלח", "countTpl": "{done} מתוך {total} סומנו", "itemsCheckedTpl": "{done} מתוך {total} פריטים סומנו", "headingSent": "✓ הרשימה נשלחה למפקח", "textSent": "קובץ ה-PDF של הרשימה שותף עבור עבודה זו. הקישו על “חזרה לרשימה” כדי לנקות את הטופס ולהתחיל את העבודה הבאה.", "headingReady": "ה-PDF מוכן לשליחה", "textReadyTpl": "קובץ ה-PDF של הרשימה ({name}) נוצר בטלפון זה, עותק נשלח להורדות היכן שהדפדפן מאפשר זאת. הקישו על שיתוף כדי לשלוח אותו — בחרו דואר, Gmail, הודעות או אפליקציה אחרת. אם השיתוף לא עובד כאן, הקישו על פתיחת PDF והשתמשו בלחצני השיתוף או השמירה של המציג, או על הורדת PDF כדי לשמור עותק לצירוף. כשתסיימו, הקישו על “חזרה לרשימה” כדי לנקות את הטופס לעבודה הבאה.", "offlineNote": " אתם במצב לא מחובר — עדיין ניתן לשתף; הדוא״ל יישלח כשתחזור הקליטה.", "errNoteTpl": " הערה: השיתוף הישיר נכשל בטלפון זה ({err}) — השתמשו באחת האפשרויות שלהלן.", "toastStartedFresh": "התחלנו מחדש — ההתקדמות השמורה של עבודה זו נמחקה.", "toastReset": "הרשימה אופסה — מוכנים לעבודה הבאה.", "toastShareCancelled": "השיתוף בוטל", "toastShareCancelledNotSent": "השיתוף בוטל — הרשימה עדיין לא נשלחה", "toastPickMail": "בחרו דואר או Gmail כדי לשלוח את ה-PDF ל-BK Packz.", "errBuildPdf": "לא ניתן היה ליצור את PDF של הרשימה — דבר לא נשלח", "errShareFail": "השיתוף נכשל — נסו פתיחת PDF או הורדת PDF שלהלן", "errAutoDownload": "ההורדה האוטומטית של ה-PDF נכשלה; השתמשו בפתיחת PDF או בהורדת PDF במסך הבא", "errNothing": "אין עדיין מה לשתף", "errNothingDetail": "אין PDF ממתין — הקישו תחילה על שליחה למפקח ולאחר מכן על שיתוף.", "errNoShare": "השיתוף אינו זמין בדפדפן זה", "phJob": "לדוגמה 737-26-00171", "phLead": "שמך", "phCustomer": "שם הלקוח", "phCrew": "לדוגמה Jennifer P., Ben W., Alberto G.", "phNotes": "ציוד חסר, בעיות בעבודה, שינויים…", "items": {"trash-auth": "אישור פינוי / השלכת אשפה חתום (אם מפנים פריטים)", "job-details-reviewed": "פרטי העבודה נבדקו (כתובת, היקף, איש קשר) ב-Proven Jobs", "customer-called": "הלקוח קיבל שיחה — חלון ההגעה אושר", "liveswitch-setup": "פרויקט LiveSwitch הוקם / הטלפון טעון להקלטה", "crew-address-time": "לכולם יש את הכתובת ושעת ההתחלה", "truck-fueled": "המשאית מתודלקת (כרטיס WEX במשאית)", "truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "dollies-straps": "עגלות, עגלת יד ורצועות נטענו", "units-confirmed": "משלוח או איסוף של מכולת UNITS אושר (אם העבודה משתמשת באחת)", "boxes-sml": "קופסאות — קטנות / בינוניות / גדולות", "tape-dispensers": "סרט הדבקה ומתקני הדבקה", "paper-bubble": "נייר אריזה וניילון בועות", "wardrobe-boxes": "קופסאות ארון בגדים", "picture-mirror-boxes": "קופסאות לתמונות / מראות", "lamp-boxes": "קופסאות למנורות", "dish-pack-boxes": "קופסאות לכלי אוכל", "furniture-pads": "כריות / שמיכות לרהיטים", "shrink-wrap": "ניילון נצמד", "labels-markers": "מדבקות וטושים", "floor-protection": "הגנה לרצפה ומגיני פינות", "trash-bags": "שקיות אשפה", "tool-kit": "ערכת כלים בסיסית", "pull-list": "רשימת משיכה / מלאי ביד", "vault-numbers": "מספרי כספות או יחידות אושרו", "items-verified": "הפריטים אומתו מול המלאי לפני הטעינה", "weather-checked": "מזג האוויר נבדק — ציוד לגשם / פלסטיק נטען במידת הצורך", "load-plan": "תוכנית ההטענה נבדקה עם הצוות", "warehouse-secured-leaving": "המחסן מאובטח / הדלתות נעולות", "walk-in-video": "סרטון כניסה ב-LiveSwitch", "contact-insured": "קשר עם המבוטח", "photos-icat": "תמונות ב-iCat", "secure-furniture": "לאבטח את הרהיטים", "walk-out-video": "סרטון יציאה ב-LiveSwitch", "walk-out-photos": "תמונות יציאה ב-iCat (יום אחרון)", "organize-work-area": "לארגן את אזור העבודה", "secure-truck": "לאבטח את המשאית", "clean-trash": "לנקות את כל האשפה לפני היציאה", "lights-off-doors-locked": "לכבות את כל האורות, לנעול את כל הדלתות", "eod-truck-checked": "המשאית נבדקה: אורות, צמיגים, מעלית / רמפה", "driving-log": "נהג המשאית מילא יומן נהיגה", "contents-vaults": "התכולה הועברה לכספות", "equipment-returned": "הציוד הוחזר למקומו", "liveswitch-uploaded": "סרטוני LiveSwitch הועלו", "icat-uploaded": "תכולת iCat הועלתה לענן", "dock-bay": "לסגור ולאבטח את רציף הטעינה", "eod-warehouse-secured": "המחסן מאובטח / הדלתות נעולות", "charge-batteries": "לטעון את כל סוללות הכלים ומכשיר הסריקה"}, "tWarehouseStart": "שעת התחלה במחסן", "tJobsiteArrival": "שעת הגעה לאתר העבודה", "tJobsiteDeparture": "שעת יציאה מאתר העבודה", "tWarehouseDeparture": "שעת יציאה מהמחסן", "hSignature": "חתימת הטכנאי הראשי", "sigAttest": "אני מאשר שכל המשימות המסומנות ברשימה זו הושלמו, ושכל משימה שלא סומנה לא נדרשה.", "sigLeadLabel": "טכנאי ראשי", "sigNameLabel": "חתימה — הקלד את שמך המלא", "sigNamePh": "שם מלא", "sigSignBtn": "חתום", "sigClearBtn": "נקה וחתום מחדש", "sigUnsigned": "טרם נחתם. נדרשת חתימת טכנאי ראשי לפני השליחה.", "signedByTpl": "נחתם על ידי {name} — {when}", "errSigRequired": "נדרשת חתימת טכנאי ראשי לפני השליחה. חתום בתחתית הרשימה.", "errSigName": "הקלד תחילה את שמך המלא כחתימה.", "curLoc": "מיקום נוכחי", "curLocUnavailable": "לא זמין"}, "zh": {"title": "领队技术员每日检查表", "subtitle": "BK Packz — 离开仓库前填写此表，然后点击“发送给主管”，将 PDF 发送到工作档案中。", "online": "在线", "offline": "离线", "refresh": "刷新", "language": "语言", "installApp": "安装应用", "iosHint": "安装方法：点击“共享”，然后点击“添加到主屏幕”。", "jobDetails": "工作详情", "jobType": "工作类型", "packout": "打包出库", "packback": "送回交付", "date": "日期", "jobNumber": "工作编号", "leadTech": "领队技术员", "customerName": "客户姓名", "hPaperwork": "1 · 工作档案与文件", "hCrew": "2 · 团队", "hTruck": "3 · 卡车与运输", "hSupplies": "4 · 已装载用品", "hPackbackChecks": "4 · 送回检查", "hBefore": "5 · 离开仓库前", "hDuring": "6 · 白天工作中", "hEod": "7 · 当天结束", "hNotes": "备注", "crewNames": "今天的团队 — 姓名", "notesLabel": "办公室需要知道的事项", "progressNote": "未勾选的项目仍会出现在 PDF 中，并标记为<strong>未完成</strong>，以便办公室了解遗漏内容。", "initials": "姓名缩写", "initialsConfirm": "确认所有受保物品均已装车", "initialsAria": "领队技术员姓名缩写，确认所有受保物品均已装车", "eodQuestion": "货物是否已从卡车上卸下？", "yes": "是", "no": "否", "send": "发送给主管", "reset": "重新开始 — 清除此工作的已保存进度", "resetArmed": "再次点击即可清除全部内容", "saveAuto": "自动保存在此手机上", "saved": "已保存 ✓", "pickedUp": "已恢复到上次离开的位置", "allDone": "全部完成 — 可以出发了", "dismiss": "关闭", "share": "共享", "shared": "已共享 ✓", "openPdf": "打开 PDF", "downloadPdf": "下载 PDF", "returnBtn": "返回检查表", "csJob": "工作编号", "csCustomer": "客户", "csType": "工作类型", "csDate": "日期", "csProgress": "进度", "csSubmitted": "已提交", "countTpl": "已勾选 {done}/{total}", "itemsCheckedTpl": "已勾选 {done}/{total} 项", "headingSent": "✓ 检查表已发送给主管", "textSent": "此工作的检查表 PDF 已共享。点击“返回检查表”清除表单并开始下一项工作。", "headingReady": "PDF 已准备好发送", "textReadyTpl": "检查表 PDF（{name}）已在此手机上生成，并在浏览器允许的情况下发送了一份副本到下载文件夹。点击“共享”发送 — 选择邮件、Gmail、信息或其他应用。如果此处无法共享，请点击“打开 PDF”并使用查看器自带的共享或保存按钮，或点击“下载 PDF”保存一份副本以便附加。完成后，点击“返回检查表”清除表单，以便进行下一项工作。", "offlineNote": " 您当前处于离线状态 — 仍可共享；电子邮件将在恢复信号后发送。", "errNoteTpl": " 注意：此手机上的直接共享失败（{err}）— 请改用下面的选项之一。", "toastStartedFresh": "已重新开始 — 此工作的已保存进度已清除。", "toastReset": "检查表已重置 — 可以开始下一项工作了。", "toastShareCancelled": "共享已取消", "toastShareCancelledNotSent": "共享已取消 — 检查表尚未发送", "toastPickMail": "请选择邮件或 Gmail，将 PDF 通过电子邮件发送给 BK Packz。", "errBuildPdf": "无法生成检查表 PDF — 未发送任何内容", "errShareFail": "共享失败 — 请尝试下面的打开 PDF 或下载 PDF", "errAutoDownload": "PDF 自动下载失败；请在下一个屏幕上使用打开 PDF 或下载 PDF", "errNothing": "尚无可共享的内容", "errNothingDetail": "没有等待中的 PDF — 请先点击发送给主管，然后点击共享。", "errNoShare": "此浏览器不支持共享", "phJob": "例如 737-26-00171", "phLead": "您的姓名", "phCustomer": "客户姓名", "phCrew": "例如 Jennifer P.、Ben W.、Alberto G.", "phNotes": "缺少的用品、工作问题、变更…", "items": {"trash-auth": "垃圾/废弃物处理授权已签署（如需处理物品）", "job-details-reviewed": "已在 Proven Jobs 中查看工作详情（地址、范围、联系人）", "customer-called": "已致电客户 — 已确认到达时间段", "liveswitch-setup": "LiveSwitch 项目已设置 / 手机已充电以便录像", "crew-address-time": "每个人都有地址和开始时间", "truck-fueled": "卡车已加油（WEX 卡在车内）", "truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "dollies-straps": "推车、手推车和绑带已装车", "units-confirmed": "UNITS 集装箱送达或取回已确认（如本工作使用）", "boxes-sml": "箱子 — 小号 / 中号 / 大号", "tape-dispensers": "胶带和胶带器", "paper-bubble": "包装纸和气泡膜", "wardrobe-boxes": "衣柜箱", "picture-mirror-boxes": "画框 / 镜子箱", "lamp-boxes": "灯具箱", "dish-pack-boxes": "餐具箱", "furniture-pads": "家具垫 / 毯子", "shrink-wrap": "收缩膜", "labels-markers": "标签和记号笔", "floor-protection": "地面保护和护角", "trash-bags": "垃圾袋", "tool-kit": "基本工具包", "pull-list": "提货清单 / 库存清单已带齐", "vault-numbers": "库房或单元编号已确认", "items-verified": "装车前已按库存核对物品", "weather-checked": "已查看天气 — 如有需要已装载防雨用品 / 塑料布", "load-plan": "已与团队查看装载计划", "warehouse-secured-leaving": "仓库已锁好 / 大门已锁", "walk-in-video": "LiveSwitch 入场视频", "contact-insured": "已与被保险人联系", "photos-icat": "iCat 照片", "secure-furniture": "固定家具", "walk-out-video": "LiveSwitch 离场视频", "walk-out-photos": "iCat 离场照片（最后一天）", "organize-work-area": "整理工作区域", "secure-truck": "锁好卡车", "clean-trash": "离开前清理所有垃圾", "lights-off-doors-locked": "关闭所有灯，锁好所有门", "eod-truck-checked": "卡车已检查：车灯、轮胎、升降尾板 / 坡道", "driving-log": "卡车司机已填写驾驶日志", "contents-vaults": "货物已转移到库房", "equipment-returned": "设备已归还到原位", "liveswitch-uploaded": "LiveSwitch 视频已上传", "icat-uploaded": "iCat 内容已上传到云端", "dock-bay": "关闭并锁好装卸区", "eod-warehouse-secured": "仓库已锁好 / 大门已锁", "charge-batteries": "为所有工具电池和扫描设备充电"}, "tWarehouseStart": "仓库开始时间", "tJobsiteArrival": "到达工作现场时间", "tJobsiteDeparture": "离开工作现场时间", "tWarehouseDeparture": "离开仓库时间", "hSignature": "领队技术员签名", "sigAttest": "我确认此清单上标记的所有任务均已完成，任何未标记的任务均为不需要。", "sigLeadLabel": "领队技术员", "sigNameLabel": "签名 — 输入您的全名", "sigNamePh": "全名", "sigSignBtn": "签名", "sigClearBtn": "清除并重新签名", "sigUnsigned": "尚未签名。发送前需要领队技术员签名。", "signedByTpl": "由 {name} 签名 — {when}", "errSigRequired": "发送前需要领队技术员签名。请在清单底部签名。", "errSigName": "请先输入您的全名作为签名。", "curLoc": "当前位置", "curLocUnavailable": "不可用"}, "it": {"title": "Checklist giornaliera del tecnico capo", "subtitle": "BK Packz — compilala prima di lasciare il magazzino, poi tocca Invia al supervisore per inviare il PDF alla pratica del lavoro.", "online": "Online", "offline": "Offline", "refresh": "Aggiorna", "language": "Lingua", "installApp": "Installa l'app", "iosHint": "Per installare: tocca Condividi, poi “Aggiungi alla schermata Home”.", "jobDetails": "Dettagli del lavoro", "jobType": "Tipo di lavoro", "packout": "Imballaggio", "packback": "Riconsegna", "date": "Data", "jobNumber": "Numero del lavoro", "leadTech": "Tecnico capo", "customerName": "Nome del cliente", "hPaperwork": "1 · Pratica e documenti del lavoro", "hCrew": "2 · Squadra", "hTruck": "3 · Camion e trasporto", "hSupplies": "4 · Materiali caricati", "hPackbackChecks": "4 · Controlli di riconsegna", "hBefore": "5 · Prima di lasciare il magazzino", "hDuring": "6 · Durante la giornata", "hEod": "7 · Fine giornata", "hNotes": "Note", "crewNames": "Squadra di oggi — nomi", "notesLabel": "Tutto ciò che l'ufficio deve sapere", "progressNote": "Gli elementi non spuntati compaiono comunque nel PDF, contrassegnati come <strong>NON FATTO</strong>, così l'ufficio può vedere cosa è mancato.", "initials": "Iniziali", "initialsConfirm": "Confermare che tutti gli articoli assicurati sono stati caricati", "initialsAria": "Iniziali del tecnico capo che conferma che tutti gli articoli assicurati sono stati caricati", "eodQuestion": "Il contenuto è stato scaricato dal camion?", "yes": "Sì", "no": "No", "send": "Invia al supervisore", "reset": "Ricomincia — cancella l'avanzamento salvato di questo lavoro", "resetArmed": "Tocca di nuovo per cancellare tutto", "saveAuto": "Salvataggio automatico su questo telefono", "saved": "Salvato ✓", "pickedUp": "Hai ripreso da dove avevi lasciato", "allDone": "Tutto fatto — pronti a partire", "dismiss": "Chiudi", "share": "Condividi", "shared": "Condiviso ✓", "openPdf": "Apri PDF", "downloadPdf": "Scarica PDF", "returnBtn": "Torna alla checklist", "csJob": "Numero del lavoro", "csCustomer": "Cliente", "csType": "Tipo di lavoro", "csDate": "Data", "csProgress": "Avanzamento", "csSubmitted": "Inviato", "countTpl": "{done} di {total} spuntati", "itemsCheckedTpl": "{done} di {total} elementi spuntati", "headingSent": "✓ Checklist inviata al supervisore", "textSent": "Il PDF della checklist è stato condiviso per questo lavoro. Tocca “Torna alla checklist” per cancellare il modulo e iniziare il lavoro successivo.", "headingReady": "PDF pronto da inviare", "textReadyTpl": "Il PDF della checklist ({name}) è stato generato su questo telefono e una copia è stata inviata ai Download dove questo browser lo consente. Tocca Condividi per inviarlo: scegli Mail, Gmail, Messaggi o un'altra app. Se Condividi non funziona qui, tocca Apri PDF e usa i pulsanti di condivisione o salvataggio del visualizzatore, oppure Scarica PDF per salvare una copia da allegare. Al termine, tocca “Torna alla checklist” per cancellare il modulo per il lavoro successivo.", "offlineNote": " Sei offline: puoi comunque condividere; l'e-mail verrà inviata quando tornerà la copertura.", "errNoteTpl": " Nota: la condivisione diretta non è riuscita su questo telefono ({err}); usa una delle opzioni seguenti.", "toastStartedFresh": "Ricomiciato da capo: l'avanzamento salvato di questo lavoro è stato cancellato.", "toastReset": "Checklist reimpostata: pronti per il lavoro successivo.", "toastShareCancelled": "Condivisione annullata", "toastShareCancelledNotSent": "Condivisione annullata: checklist non ancora inviata", "toastPickMail": "Scegli Mail o Gmail per inviare il PDF a BK Packz via e-mail.", "errBuildPdf": "Impossibile creare il PDF della checklist: non è stato inviato nulla", "errShareFail": "Condivisione non riuscita: prova Apri PDF o Scarica PDF qui sotto", "errAutoDownload": "Il download automatico del PDF non è riuscito; usa Apri PDF o Scarica PDF nella schermata successiva", "errNothing": "Ancora nulla da condividere", "errNothingDetail": "Nessun PDF in attesa: tocca prima Invia al supervisore, poi Condividi.", "errNoShare": "La condivisione non è disponibile in questo browser", "phJob": "es. 737-26-00171", "phLead": "Il tuo nome", "phCustomer": "Nome del cliente", "phCrew": "es. Jennifer P., Ben W., Alberto G.", "phNotes": "Materiali mancanti, problemi del lavoro, modifiche…", "items": {"trash-auth": "Autorizzazione allo smaltimento / rifiuti firmata (se vengono smaltiti articoli)", "job-details-reviewed": "Dettagli del lavoro verificati (indirizzo, ambito, contatto) in Proven Jobs", "customer-called": "Cliente chiamato — fascia di arrivo confermata", "liveswitch-setup": "Progetto LiveSwitch creato / telefono carico per registrare", "crew-address-time": "Tutti hanno l'indirizzo e l'orario di inizio", "truck-fueled": "Camion rifornito (carta WEX nel camion)", "truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "dollies-straps": "Carrelli, carrello a mano e cinghie caricati", "units-confirmed": "Consegna o ritiro del container UNITS confermato (se questo lavoro ne usa uno)", "boxes-sml": "Scatole — piccole / medie / grandi", "tape-dispensers": "Nastro adesivo e dispenser", "paper-bubble": "Carta da imballaggio e pluriball", "wardrobe-boxes": "Scatole guardaroba", "picture-mirror-boxes": "Scatole per quadri / specchi", "lamp-boxes": "Scatole per lampade", "dish-pack-boxes": "Scatole per stoviglie", "furniture-pads": "Coperte / protezioni per mobili", "shrink-wrap": "Pellicola estensibile", "labels-markers": "Etichette e pennarelli", "floor-protection": "Protezione per pavimenti e paraspigoli", "trash-bags": "Sacchi per la spazzatura", "tool-kit": "Kit di attrezzi di base", "pull-list": "Elenco di prelievo / inventario a portata di mano", "vault-numbers": "Numeri di caveau o unità confermati", "items-verified": "Articoli verificati rispetto all'inventario prima del carico", "weather-checked": "Meteo controllato — materiali per la pioggia / plastica caricati se necessario", "load-plan": "Piano di carico verificato con la squadra", "warehouse-secured-leaving": "Magazzino messo in sicurezza / porte chiuse a chiave", "walk-in-video": "Video di ingresso su LiveSwitch", "contact-insured": "Contatto con l'assicurato", "photos-icat": "Foto su iCat", "secure-furniture": "Mettere in sicurezza i mobili", "walk-out-video": "Video di uscita su LiveSwitch", "walk-out-photos": "Foto di uscita su iCat (ultimo giorno)", "organize-work-area": "Organizzare l'area di lavoro", "secure-truck": "Mettere in sicurezza il camion", "clean-trash": "Pulire tutta la spazzatura prima di partire", "lights-off-doors-locked": "Spegnere tutte le luci, chiudere a chiave tutte le porte", "eod-truck-checked": "Camion controllato: luci, pneumatici, sponda idraulica / rampa", "driving-log": "L'autista del camion ha compilato il registro di guida", "contents-vaults": "Contenuto trasferito nei caveau", "equipment-returned": "Attrezzatura riportata al suo posto", "liveswitch-uploaded": "Video LiveSwitch caricati", "icat-uploaded": "Contenuti iCat caricati sul cloud", "dock-bay": "Chiudere e mettere in sicurezza la banchina di carico", "eod-warehouse-secured": "Magazzino messo in sicurezza / porte chiuse a chiave", "charge-batteries": "Caricare tutte le batterie degli utensili e il dispositivo di scansione"}, "tWarehouseStart": "Orario di inizio in magazzino", "tJobsiteArrival": "Orario di arrivo in cantiere", "tJobsiteDeparture": "Orario di partenza dal cantiere", "tWarehouseDeparture": "Orario di partenza dal magazzino", "hSignature": "Firma del tecnico capo", "sigAttest": "Confermo che tutte le attività contrassegnate in questo elenco sono state completate e che qualsiasi attività non contrassegnata non era richiesta.", "sigLeadLabel": "Tecnico capo", "sigNameLabel": "Firma — digita il tuo nome completo", "sigNamePh": "Nome completo", "sigSignBtn": "Firma", "sigClearBtn": "Cancella e firma di nuovo", "sigUnsigned": "Non ancora firmato. È richiesta la firma del tecnico capo prima dell'invio.", "signedByTpl": "Firmato da {name} — {when}", "errSigRequired": "È richiesta la firma del tecnico capo prima dell'invio. Firma in fondo all'elenco.", "errSigName": "Digita prima il tuo nome completo come firma.", "curLoc": "Posizione attuale", "curLocUnavailable": "non disponibile"}, "fr": {"title": "Liste de contrôle quotidienne du technicien chef", "subtitle": "BK Packz — remplissez-la avant de quitter l'entrepôt, puis appuyez sur Envoyer au superviseur pour envoyer le PDF au dossier du chantier.", "online": "En ligne", "offline": "Hors ligne", "refresh": "Actualiser", "language": "Langue", "installApp": "Installer l'application", "iosHint": "Pour installer : appuyez sur Partager, puis sur « Ajouter à l'écran d'accueil ».", "jobDetails": "Détails du chantier", "jobType": "Type de chantier", "packout": "Emballage", "packback": "Retour / livraison", "date": "Date", "jobNumber": "Numéro de chantier", "leadTech": "Technicien chef", "customerName": "Nom du client", "hPaperwork": "1 · Dossier et documents du chantier", "hCrew": "2 · Équipe", "hTruck": "3 · Camion et transport", "hSupplies": "4 · Fournitures chargées", "hPackbackChecks": "4 · Vérifications de retour", "hBefore": "5 · Avant de quitter l'entrepôt", "hDuring": "6 · Pendant la journée", "hEod": "7 · Fin de journée", "hNotes": "Remarques", "crewNames": "Équipe du jour — noms", "notesLabel": "Tout ce que le bureau doit savoir", "progressNote": "Les éléments non cochés apparaissent quand même dans le PDF, marqués <strong>NON FAIT</strong>, pour que le bureau voie ce qui a été manqué.", "initials": "Initiales", "initialsConfirm": "Confirmer que tous les articles assurés sont chargés", "initialsAria": "Initiales du technicien chef confirmant que tous les articles assurés sont chargés", "eodQuestion": "Le contenu a-t-il été déchargé du camion ?", "yes": "Oui", "no": "Non", "send": "Envoyer au superviseur", "reset": "Recommencer — effacer la progression enregistrée de ce chantier", "resetArmed": "Appuyez à nouveau pour tout effacer", "saveAuto": "Enregistrement automatique sur ce téléphone", "saved": "Enregistré ✓", "pickedUp": "Vous avez repris là où vous vous étiez arrêté", "allDone": "Tout est fait — prêt à partir", "dismiss": "Fermer", "share": "Partager", "shared": "Partagé ✓", "openPdf": "Ouvrir le PDF", "downloadPdf": "Télécharger le PDF", "returnBtn": "Retour à la liste", "csJob": "Numéro de chantier", "csCustomer": "Client", "csType": "Type de chantier", "csDate": "Date", "csProgress": "Progression", "csSubmitted": "Envoyé", "countTpl": "{done} sur {total} cochés", "itemsCheckedTpl": "{done} sur {total} éléments cochés", "headingSent": "✓ Liste envoyée au superviseur", "textSent": "Le PDF de la liste a été partagé pour ce chantier. Appuyez sur « Retour à la liste » pour effacer le formulaire et commencer le chantier suivant.", "headingReady": "PDF prêt à envoyer", "textReadyTpl": "Le PDF de la liste ({name}) a été généré sur ce téléphone, et une copie a été envoyée dans les Téléchargements là où ce navigateur le permet. Appuyez sur Partager pour l'envoyer : choisissez Mail, Gmail, Messages ou une autre application. Si Partager ne fonctionne pas ici, appuyez sur Ouvrir le PDF et utilisez les boutons de partage ou d'enregistrement du lecteur, ou sur Télécharger le PDF pour enregistrer une copie à joindre. Lorsque vous avez terminé, appuyez sur « Retour à la liste » pour effacer le formulaire pour le chantier suivant.", "offlineNote": " Vous êtes hors ligne : vous pouvez quand même partager ; l'e-mail partira dès le retour de la couverture.", "errNoteTpl": " Remarque : le partage direct a échoué sur ce téléphone ({err}) ; utilisez l'une des options ci-dessous.", "toastStartedFresh": "Recommencé à zéro : la progression enregistrée de ce chantier a été effacée.", "toastReset": "Liste réinitialisée : prêt pour le chantier suivant.", "toastShareCancelled": "Partage annulé", "toastShareCancelledNotSent": "Partage annulé : liste pas encore envoyée", "toastPickMail": "Choisissez Mail ou Gmail pour envoyer le PDF à BK Packz par e-mail.", "errBuildPdf": "Impossible de créer le PDF de la liste : rien n'a été envoyé", "errShareFail": "Échec du partage : essayez Ouvrir le PDF ou Télécharger le PDF ci-dessous", "errAutoDownload": "Le téléchargement automatique du PDF a échoué ; utilisez Ouvrir le PDF ou Télécharger le PDF sur l'écran suivant", "errNothing": "Rien à partager pour le moment", "errNothingDetail": "Aucun PDF en attente : appuyez d'abord sur Envoyer au superviseur, puis sur Partager.", "errNoShare": "Le partage n'est pas disponible dans ce navigateur", "phJob": "ex. 737-26-00171", "phLead": "Votre nom", "phCustomer": "Nom du client", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Fournitures manquantes, problèmes du chantier, changements…", "items": {"trash-auth": "Autorisation d'élimination / de mise au rebut signée (si des articles sont éliminés)", "job-details-reviewed": "Détails du chantier vérifiés (adresse, étendue, contact) dans Proven Jobs", "customer-called": "Client appelé — créneau d'arrivée confirmé", "liveswitch-setup": "Projet LiveSwitch créé / téléphone chargé pour enregistrer", "crew-address-time": "Tout le monde a l'adresse et l'heure de début", "truck-fueled": "Camion ravitaillé (carte WEX dans le camion)", "truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "dollies-straps": "Diables, chariot à main et sangles chargés", "units-confirmed": "Livraison ou enlèvement du conteneur UNITS confirmé (si ce chantier en utilise un)", "boxes-sml": "Cartons — petits / moyens / grands", "tape-dispensers": "Ruban adhésif et dévidoirs", "paper-bubble": "Papier d'emballage et papier bulle", "wardrobe-boxes": "Cartons penderie", "picture-mirror-boxes": "Cartons pour tableaux / miroirs", "lamp-boxes": "Cartons pour lampes", "dish-pack-boxes": "Cartons pour vaisselle", "furniture-pads": "Couvertures / protections pour meubles", "shrink-wrap": "Film étirable", "labels-markers": "Étiquettes et marqueurs", "floor-protection": "Protection de sol et protège-coins", "trash-bags": "Sacs poubelle", "tool-kit": "Boîte à outils de base", "pull-list": "Liste de prélèvement / inventaire en main", "vault-numbers": "Numéros de box ou d'unité confirmés", "items-verified": "Articles vérifiés par rapport à l'inventaire avant le chargement", "weather-checked": "Météo vérifiée — fournitures de pluie / plastique chargées si nécessaire", "load-plan": "Plan de chargement revu avec l'équipe", "warehouse-secured-leaving": "Entrepôt sécurisé / portes verrouillées", "walk-in-video": "Vidéo d'entrée sur LiveSwitch", "contact-insured": "Contact avec l'assuré", "photos-icat": "Photos sur iCat", "secure-furniture": "Sécuriser les meubles", "walk-out-video": "Vidéo de sortie sur LiveSwitch", "walk-out-photos": "Photos de sortie sur iCat (dernier jour)", "organize-work-area": "Organiser la zone de travail", "secure-truck": "Sécuriser le camion", "clean-trash": "Nettoyer tous les déchets avant de partir", "lights-off-doors-locked": "Éteindre toutes les lumières, verrouiller toutes les portes", "eod-truck-checked": "Camion vérifié : feux, pneus, hayon / rampe", "driving-log": "Le conducteur du camion a rempli le journal de conduite", "contents-vaults": "Contenu transféré dans les box", "equipment-returned": "Équipement remis à sa place", "liveswitch-uploaded": "Vidéos LiveSwitch téléversées", "icat-uploaded": "Contenus iCat téléversés dans le cloud", "dock-bay": "Fermer et sécuriser le quai de chargement", "eod-warehouse-secured": "Entrepôt sécurisé / portes verrouillées", "charge-batteries": "Charger toutes les batteries d'outils et l'appareil de numérisation"}, "tWarehouseStart": "Heure de début à l'entrepôt", "tJobsiteArrival": "Heure d'arrivée sur le chantier", "tJobsiteDeparture": "Heure de départ du chantier", "tWarehouseDeparture": "Heure de départ de l'entrepôt", "hSignature": "Signature du technicien chef", "sigAttest": "Je confirme que toutes les tâches cochées sur cette liste ont été accomplies, et que toute tâche non cochée n'était pas requise.", "sigLeadLabel": "Technicien chef", "sigNameLabel": "Signature — tapez votre nom complet", "sigNamePh": "Nom complet", "sigSignBtn": "Signer", "sigClearBtn": "Effacer et signer à nouveau", "sigUnsigned": "Pas encore signé. La signature du technicien chef est requise avant l'envoi.", "signedByTpl": "Signé par {name} — {when}", "errSigRequired": "La signature du technicien chef est requise avant l'envoi. Signez en bas de la liste.", "errSigName": "Tapez d'abord votre nom complet comme signature.", "curLoc": "Position actuelle", "curLocUnavailable": "indisponible"}, "pt": {"title": "Lista de verificação diária do técnico líder", "subtitle": "BK Packz — preencha isto antes de sair do armazém e depois toque em Enviar ao supervisor para enviar o PDF para o arquivo do trabalho.", "online": "Online", "offline": "Offline", "refresh": "Atualizar", "language": "Idioma", "installApp": "Instalar o aplicativo", "iosHint": "Para instalar: toque em Compartilhar e depois em “Adicionar à Tela de Início”.", "jobDetails": "Detalhes do trabalho", "jobType": "Tipo de trabalho", "packout": "Embalagem", "packback": "Devolução / entrega", "date": "Data", "jobNumber": "Número do trabalho", "leadTech": "Técnico líder", "customerName": "Nome do cliente", "hPaperwork": "1 · Arquivo e documentos do trabalho", "hCrew": "2 · Equipe", "hTruck": "3 · Caminhão e transporte", "hSupplies": "4 · Suprimentos carregados", "hPackbackChecks": "4 · Verificações de devolução", "hBefore": "5 · Antes de sair do armazém", "hDuring": "6 · Durante o dia", "hEod": "7 · Fim do dia", "hNotes": "Observações", "crewNames": "Equipe de hoje — nomes", "notesLabel": "Tudo o que o escritório deve saber", "progressNote": "Os itens não marcados ainda aparecem no PDF, marcados como <strong>NÃO FEITO</strong>, para que o escritório veja o que foi esquecido.", "initials": "Iniciais", "initialsConfirm": "Confirmar que todos os itens segurados foram carregados", "initialsAria": "Iniciais do técnico líder confirmando que todos os itens segurados foram carregados", "eodQuestion": "O conteúdo foi descarregado do caminhão?", "yes": "Sim", "no": "Não", "send": "Enviar ao supervisor", "reset": "Recomeçar — apagar o progresso salvo deste trabalho", "resetArmed": "Toque novamente para apagar tudo", "saveAuto": "Salva automaticamente neste telefone", "saved": "Salvo ✓", "pickedUp": "Você continuou de onde parou", "allDone": "Tudo feito — pronto para sair", "dismiss": "Dispensar", "share": "Compartilhar", "shared": "Compartilhado ✓", "openPdf": "Abrir PDF", "downloadPdf": "Baixar PDF", "returnBtn": "Voltar à lista", "csJob": "Número do trabalho", "csCustomer": "Cliente", "csType": "Tipo de trabalho", "csDate": "Data", "csProgress": "Progresso", "csSubmitted": "Enviado", "countTpl": "{done} de {total} marcados", "itemsCheckedTpl": "{done} de {total} itens marcados", "headingSent": "✓ Lista enviada ao supervisor", "textSent": "O PDF da lista foi compartilhado para este trabalho. Toque em “Voltar à lista” para limpar o formulário e começar o próximo trabalho.", "headingReady": "PDF pronto para enviar", "textReadyTpl": "O PDF da lista ({name}) foi gerado neste telefone e uma cópia foi enviada para Downloads onde este navegador permite. Toque em Compartilhar para enviá-lo: escolha E-mail, Gmail, Mensagens ou outro aplicativo. Se Compartilhar não funcionar aqui, toque em Abrir PDF e use os botões de compartilhar ou salvar do visualizador, ou Baixar PDF para salvar uma cópia e anexá-la. Quando terminar, toque em “Voltar à lista” para limpar o formulário para o próximo trabalho.", "offlineNote": " Você está offline: ainda pode compartilhar; o e-mail será enviado quando a cobertura voltar.", "errNoteTpl": " Observação: o compartilhamento direto falhou neste telefone ({err}); use uma das opções abaixo.", "toastStartedFresh": "Recomeçado do zero: o progresso salvo deste trabalho foi apagado.", "toastReset": "Lista redefinida: pronta para o próximo trabalho.", "toastShareCancelled": "Compartilhamento cancelado", "toastShareCancelledNotSent": "Compartilhamento cancelado: a lista ainda não foi enviada", "toastPickMail": "Escolha E-mail ou Gmail para enviar o PDF para a BK Packz.", "errBuildPdf": "Não foi possível criar o PDF da lista: nada foi enviado", "errShareFail": "Falha no compartilhamento: tente Abrir PDF ou Baixar PDF abaixo", "errAutoDownload": "O download automático do PDF falhou; use Abrir PDF ou Baixar PDF na próxima tela", "errNothing": "Ainda não há nada para compartilhar", "errNothingDetail": "Nenhum PDF aguardando: toque primeiro em Enviar ao supervisor e depois em Compartilhar.", "errNoShare": "O compartilhamento não está disponível neste navegador", "phJob": "ex. 737-26-00171", "phLead": "Seu nome", "phCustomer": "Nome do cliente", "phCrew": "ex. Jennifer P., Ben W., Alberto G.", "phNotes": "Suprimentos faltando, problemas do trabalho, alterações…", "items": {"trash-auth": "Autorização de descarte / lixo assinada (se itens forem descartados)", "job-details-reviewed": "Detalhes do trabalho revisados (endereço, escopo, contato) no Proven Jobs", "customer-called": "Cliente contatado — janela de chegada confirmada", "liveswitch-setup": "Projeto LiveSwitch configurado / telefone carregado para gravar", "crew-address-time": "Todos têm o endereço e o horário de início", "truck-fueled": "Caminhão abastecido (cartão WEX no caminhão)", "truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "dollies-straps": "Carrinhos, carrinho de mão e cintas carregados", "units-confirmed": "Entrega ou retirada do contêiner UNITS confirmada (se este trabalho usar um)", "boxes-sml": "Caixas — pequenas / médias / grandes", "tape-dispensers": "Fita adesiva e aplicadores", "paper-bubble": "Papel de embalagem e plástico bolha", "wardrobe-boxes": "Caixas guarda-roupa", "picture-mirror-boxes": "Caixas para quadros / espelhos", "lamp-boxes": "Caixas para luminárias", "dish-pack-boxes": "Caixas para louças", "furniture-pads": "Protetores / cobertores para móveis", "shrink-wrap": "Filme stretch", "labels-markers": "Etiquetas e marcadores", "floor-protection": "Proteção para pisos e protetores de canto", "trash-bags": "Sacos de lixo", "tool-kit": "Kit básico de ferramentas", "pull-list": "Lista de separação / inventário em mãos", "vault-numbers": "Números de cofres ou unidades confirmados", "items-verified": "Itens verificados em relação ao inventário antes do carregamento", "weather-checked": "Clima verificado — suprimentos para chuva / plástico carregados se necessário", "load-plan": "Plano de carga revisado com a equipe", "warehouse-secured-leaving": "Armazém trancado / portas fechadas", "walk-in-video": "Vídeo de entrada no LiveSwitch", "contact-insured": "Contato com o segurado", "photos-icat": "Fotos no iCat", "secure-furniture": "Prender os móveis", "walk-out-video": "Vídeo de saída no LiveSwitch", "walk-out-photos": "Fotos de saída no iCat (último dia)", "organize-work-area": "Organizar a área de trabalho", "secure-truck": "Proteger o caminhão", "clean-trash": "Limpar todo o lixo antes de sair", "lights-off-doors-locked": "Apagar todas as luzes, trancar todas as portas", "eod-truck-checked": "Caminhão verificado: luzes, pneus, plataforma elevatória / rampa", "driving-log": "O motorista do caminhão preencheu o registro de condução", "contents-vaults": "Conteúdo transferido para os cofres", "equipment-returned": "Equipamento devolvido ao seu lugar", "liveswitch-uploaded": "Vídeos do LiveSwitch enviados", "icat-uploaded": "Conteúdo do iCat enviado para a nuvem", "dock-bay": "Fechar e proteger a doca de carga", "eod-warehouse-secured": "Armazém trancado / portas fechadas", "charge-batteries": "Carregar todas as baterias das ferramentas e o dispositivo de digitalização"}, "tWarehouseStart": "Horário de início no armazém", "tJobsiteArrival": "Horário de chegada ao local de trabalho", "tJobsiteDeparture": "Horário de saída do local de trabalho", "tWarehouseDeparture": "Horário de saída do armazém", "hSignature": "Assinatura do técnico líder", "sigAttest": "Confirmo que todas as tarefas marcadas nesta lista foram concluídas e que qualquer tarefa não marcada não era necessária.", "sigLeadLabel": "Técnico líder", "sigNameLabel": "Assinatura — digite seu nome completo", "sigNamePh": "Nome completo", "sigSignBtn": "Assinar", "sigClearBtn": "Limpar e assinar novamente", "sigUnsigned": "Ainda não assinado. A assinatura do técnico líder é necessária antes de enviar.", "signedByTpl": "Assinado por {name} — {when}", "errSigRequired": "A assinatura do técnico líder é necessária antes de enviar. Assine no final da lista.", "errSigName": "Digite primeiro seu nome completo como assinatura.", "curLoc": "Localização atual", "curLocUnavailable": "indisponível"}};
         var LANG_KEY = "bkpackz-ltc:lang";
         var currentLang = "en";
         try {
@@ -1016,6 +1071,10 @@
           }
           var sb = $("btn-share");
           if (sb && !sb.disabled) { sb.textContent = t("share"); }
+          // The signature block's dynamic lines (signed-by / not-signed)
+          // re-render in the newly selected language too.
+          if (typeof updateSignatureUI === "function") { updateSignatureUI(); }
+          if (typeof renderCurLoc === "function") { renderCurLoc(); }
           if (!skipSavePref) {
             try { window.localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ }
           }
@@ -1036,6 +1095,7 @@
         var refreshBtn = $("btn-refresh");
         if (refreshBtn) {
           refreshBtn.addEventListener("click", function () {
+            if (typeof updateCurrentLocation === "function") { updateCurrentLocation(); }
             var reloaded = false;
             function reload() {
               if (reloaded) { return; }
@@ -1076,6 +1136,11 @@
 
         function setEodAnswer(v, skipSave) {
           eodAnswer = (v === "Yes" || v === "No") ? v : "";
+          // The Yes/No answer is a counted item: stamp it like a check
+          // (time + location for the PDF) when answered, clear when not.
+          if (eodAnswer) {
+            if (!taskTimes["__eod"]) { stampTask("__eod"); }
+          } else { clearTaskStamp("__eod"); }
           if (btnEodYes) { btnEodYes.setAttribute("aria-pressed", eodAnswer === "Yes" ? "true" : "false"); }
           if (btnEodNo) { btnEodNo.setAttribute("aria-pressed", eodAnswer === "No" ? "true" : "false"); }
           if (eodQuestion) { eodQuestion.classList.toggle("answered", eodAnswer !== ""); }
@@ -1132,9 +1197,273 @@
         var typeParam = params.get("type");
         if (typeParam) { setType(typeParam.toLowerCase()); }
 
+        /* ---------- Signature, completion stamp, per-task time & place ----------
+           Extra per-job state saved alongside the checks (see snapshot /
+           applyState below):
+           - sigSignedAt: ISO time the lead tech tapped Sign, or null.
+             The typed signature name itself rides in FIELD_IDS
+             ("f-sig-name"), so it saves / restores / clears like any
+             other field. Send to Supervisor is blocked until a name
+             AND a stamp exist.
+           - completedAt: ISO time the checklist first reached 100%
+             (every counted item for the current job type). Live: it
+             clears the moment anything is unmarked and re-stamps when
+             the list is completed again. Printed on the PDF only.
+           - taskTimes / taskLocs: per-item records keyed by the stable
+             data-key, stamped when an item is marked (the End of day
+             Yes/No uses "__eod", the packback initials "__initials").
+             Unmarking clears both. They print on the PDF only — the
+             checklist screen never shows them. Location capture is
+             fire-and-forget: the check and its time register instantly
+             and the coordinates attach if/when the device returns them. */
+        var sigSignedAt = null;
+        var completedAt = null;
+        var taskTimes = {};
+        var taskLocs = {};
+        var geoDenied = false; // session-only: stop asking after a denial
+
+        function fmtDateTime(v) {
+          var d = (v instanceof Date) ? v : new Date(v);
+          if (!d || isNaN(d.getTime())) { return "—"; }
+          return d.toLocaleString("en-US", {
+            month: "short", day: "numeric", year: "numeric",
+            hour: "numeric", minute: "2-digit"
+          });
+        }
+        function fmtTimeOnly(v) {
+          var d = (v instanceof Date) ? v : new Date(v);
+          if (!d || isNaN(d.getTime())) { return ""; }
+          return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+        }
+        function fmtCoord(loc) {
+          if (!loc || typeof loc.lat !== "number" || typeof loc.lon !== "number") { return ""; }
+          if (isNaN(loc.lat) || isNaN(loc.lon)) { return ""; }
+          return loc.lat.toFixed(5) + ", " + loc.lon.toFixed(5);
+        }
+
+        function captureGeo(key) {
+          if (geoDenied) { return; }
+          if (!window.navigator || !navigator.geolocation ||
+              !navigator.geolocation.getCurrentPosition) { return; }
+          try {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+              // The item may have been unmarked while waiting — only
+              // keep a location for an item still marked.
+              if (!taskTimes[key]) { return; }
+              if (pos && pos.coords &&
+                  typeof pos.coords.latitude === "number" &&
+                  typeof pos.coords.longitude === "number") {
+                taskLocs[key] = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                saveState();
+              }
+            }, function (err) {
+              if (err && err.code === 1) { geoDenied = true; } // PERMISSION_DENIED
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+          } catch (e) { /* location is best-effort only */ }
+        }
+
+        /* Current-location readout (display-only): the phone's own
+           coordinates in one subtle line by the top controls, fetched
+           on load and again when Refresh is tapped. It is NOT saved,
+           NOT attached to any item, and NOT printed on the PDF — the
+           per-task coordinates above stay report-only. Denied or
+           unavailable simply reads "unavailable"; nothing blocks. */
+        var curLocState = { status: "pending", lat: null, lon: null };
+        function renderCurLoc() {
+          var el = $("cur-loc");
+          if (!el) { return; }
+          if (curLocState.status === "ok") {
+            el.textContent = t("curLoc") + ": " +
+              curLocState.lat.toFixed(4) + ", " + curLocState.lon.toFixed(4);
+          } else if (curLocState.status === "unavailable") {
+            el.textContent = t("curLoc") + ": " + t("curLocUnavailable");
+          } else {
+            el.textContent = t("curLoc") + ": …";
+          }
+        }
+        function updateCurrentLocation() {
+          if (geoDenied || !window.navigator || !navigator.geolocation ||
+              !navigator.geolocation.getCurrentPosition) {
+            curLocState.status = "unavailable";
+            renderCurLoc();
+            return;
+          }
+          try {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+              if (pos && pos.coords &&
+                  typeof pos.coords.latitude === "number" &&
+                  typeof pos.coords.longitude === "number") {
+                curLocState.status = "ok";
+                curLocState.lat = pos.coords.latitude;
+                curLocState.lon = pos.coords.longitude;
+              } else {
+                curLocState.status = "unavailable";
+              }
+              renderCurLoc();
+            }, function (err) {
+              if (err && err.code === 1) { geoDenied = true; }
+              curLocState.status = "unavailable";
+              renderCurLoc();
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+          } catch (e) {
+            curLocState.status = "unavailable";
+            renderCurLoc();
+          }
+        }
+
+        function stampTask(key) {
+          taskTimes[key] = new Date().toISOString();
+          captureGeo(key);
+        }
+        function clearTaskStamp(key) {
+          delete taskTimes[key];
+          delete taskLocs[key];
+        }
+
+        // Same counting as updateProgress(): visible checkboxes, plus
+        // the packback initials, plus the End of day Yes/No answer.
+        function completionState() {
+          var boxes = visibleBoxes();
+          var done = 0;
+          boxes.forEach(function (b) { if (b.checked) { done++; } });
+          var total = boxes.length;
+          var initEl = $("f-initials");
+          if (jobType === "packback") {
+            total += 1;
+            if (initEl && initEl.value.trim() !== "") { done++; }
+          }
+          total += 1;
+          if (eodAnswer === "Yes" || eodAnswer === "No") { done++; }
+          return { done: done, total: total, complete: total > 0 && done === total };
+        }
+        function syncCompletion() {
+          var r = completionState();
+          if (r.complete) {
+            if (!completedAt) { completedAt = new Date().toISOString(); }
+          } else {
+            completedAt = null;
+          }
+        }
+
+        function isSigned() {
+          var n = $("f-sig-name");
+          return !!(sigSignedAt && n && n.value.trim() !== "");
+        }
+        function syncSigLead() {
+          var mirror = $("f-sig-lead");
+          var lead = $("f-lead");
+          if (mirror && lead) { mirror.value = lead.value; }
+        }
+        function updateSignatureUI() {
+          var nameEl = $("f-sig-name");
+          var statusEl = $("sig-status");
+          if (!nameEl || !statusEl) { return; }
+          syncSigLead();
+          var signed = isSigned();
+          nameEl.readOnly = signed;
+          var signBtn = $("btn-sign");
+          if (signBtn) { signBtn.classList.toggle("hidden", signed); }
+          var clearBtn = $("btn-sig-clear");
+          if (clearBtn) { clearBtn.classList.toggle("hidden", !signed); }
+          var msg = $("sig-required-msg");
+          if (signed) {
+            statusEl.textContent = fmtTpl(t("signedByTpl"), {
+              name: nameEl.value.trim(), when: fmtDateTime(sigSignedAt)
+            });
+            statusEl.className = "sig-status signed";
+            if (msg) { msg.classList.add("hidden"); }
+          } else {
+            statusEl.textContent = t("sigUnsigned");
+            statusEl.className = "sig-status";
+            if (msg && !msg.classList.contains("hidden")) {
+              msg.textContent = t("errSigRequired");
+            }
+          }
+        }
+        function requireSignature() {
+          var msg = $("sig-required-msg");
+          if (msg) {
+            msg.textContent = t("errSigRequired");
+            msg.classList.remove("hidden");
+          }
+          var card = $("sig-card");
+          if (card && card.scrollIntoView) {
+            try { card.scrollIntoView({ block: "center" }); }
+            catch (e) { card.scrollIntoView(); }
+          }
+          var inp = $("f-sig-name");
+          if (inp) {
+            try { inp.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+          }
+          toast(t("errSigRequired"));
+        }
+
+        var signBtnEl = $("btn-sign");
+        if (signBtnEl) {
+          signBtnEl.addEventListener("click", function () {
+            var nameEl = $("f-sig-name");
+            if (!nameEl || nameEl.value.trim() === "") {
+              var msg = $("sig-required-msg");
+              if (msg) {
+                msg.textContent = t("errSigName");
+                msg.classList.remove("hidden");
+              }
+              if (nameEl) {
+                try { nameEl.focus(); } catch (e) { /* ignore */ }
+              }
+              return;
+            }
+            sigSignedAt = new Date().toISOString();
+            updateSignatureUI();
+            saveState();
+          });
+        }
+        var sigClearBtnEl = $("btn-sig-clear");
+        if (sigClearBtnEl) {
+          sigClearBtnEl.addEventListener("click", function () {
+            sigSignedAt = null;
+            $("f-sig-name").value = "";
+            updateSignatureUI();
+            saveState();
+            var inp = $("f-sig-name");
+            if (inp) {
+              try { inp.focus(); } catch (e) { /* ignore */ }
+            }
+          });
+        }
+        // The Lead Tech line in the signature block mirrors the header
+        // field as the tech types (sync also runs via updateProgress).
+        $("f-lead").addEventListener("input", syncSigLead);
+
+        // Current-location readout: fetch once on load (Refresh
+        // reloads the page, which fetches again, and its handler also
+        // re-fetches directly before reloading).
+        renderCurLoc();
+        updateCurrentLocation();
+
+        // Per-task stamps: a checkbox change records (or clears) that
+        // item's time and kicks off location capture. Registered before
+        // the auto-save listeners below, and it saves again itself, so
+        // the stamps are in the snapshot whichever listener runs first.
+        document.addEventListener("change", function (e) {
+          if (!e.target || e.target.type !== "checkbox") { return; }
+          var k = e.target.getAttribute("data-key");
+          if (!k) { return; }
+          if (e.target.checked) { stampTask(k); } else { clearTaskStamp(k); }
+          saveState();
+        });
+        // The packback initials count as an item too: stamp when they
+        // go from blank to typed, clear when erased.
+        $("f-initials").addEventListener("input", function () {
+          var v = $("f-initials").value.trim();
+          if (v && !taskTimes["__initials"]) { stampTask("__initials"); }
+          if (!v) { clearTaskStamp("__initials"); }
+          saveState();
+        });
+
         /* ---------- Auto-save on this phone (per job) ---------- */
         var SAVE_PREFIX = "bkpackz-ltc:";
-        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-crew", "f-notes", "f-initials", "f-time-wh-start", "f-time-arrive", "f-time-leave-site", "f-time-wh-depart"];
+        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-crew", "f-notes", "f-initials", "f-time-wh-start", "f-time-arrive", "f-time-leave-site", "f-time-wh-depart", "f-sig-name"];
         var currentKey = null;
         var saveStatusTimer = null;
 
@@ -1201,7 +1530,8 @@
             var k = b.getAttribute("data-key");
             if (k) { checks[k] = !!b.checked; }
           });
-          return { v: 2, type: jobType, fields: fields, checks: checks, eodAnswer: eodAnswer, savedAt: Date.now() };
+          syncCompletion();
+          return { v: 2, type: jobType, fields: fields, checks: checks, eodAnswer: eodAnswer, savedAt: Date.now(), sigSignedAt: sigSignedAt, completedAt: completedAt, taskTimes: Object.assign({}, taskTimes), taskLocs: Object.assign({}, taskLocs) };
         }
 
         function flashSaved() {
@@ -1254,6 +1584,30 @@
             });
           }
           if (typeof s.eodAnswer === "string") { setEodAnswer(s.eodAnswer, true); }
+          // Signature stamp, completion stamp, and per-task time/place
+          // records. Older saves have none of these — they restore as
+          // unsigned / unstamped and simply gain stamps as items are
+          // marked from here on.
+          sigSignedAt = (typeof s.sigSignedAt === "string" && s.sigSignedAt) ? s.sigSignedAt : null;
+          completedAt = (typeof s.completedAt === "string" && s.completedAt) ? s.completedAt : null;
+          taskTimes = {};
+          if (s.taskTimes && typeof s.taskTimes === "object" && !Array.isArray(s.taskTimes)) {
+            Object.keys(s.taskTimes).forEach(function (k) {
+              if (typeof s.taskTimes[k] === "string" && s.taskTimes[k]) { taskTimes[k] = s.taskTimes[k]; }
+            });
+          }
+          taskLocs = {};
+          if (s.taskLocs && typeof s.taskLocs === "object" && !Array.isArray(s.taskLocs)) {
+            Object.keys(s.taskLocs).forEach(function (k) {
+              var L = s.taskLocs[k];
+              if (L && typeof L.lat === "number" && typeof L.lon === "number" &&
+                  !isNaN(L.lat) && !isNaN(L.lon)) {
+                taskLocs[k] = { lat: L.lat, lon: L.lon };
+              }
+            });
+          }
+          syncCompletion();
+          updateSignatureUI();
           updateProgress();
           return true;
         }
@@ -1397,6 +1751,11 @@
           setType(typeParam ? typeParam.toLowerCase() : "packout");
           allBoxes().forEach(function (b) { b.checked = false; });
           setEodAnswer("", true);
+          sigSignedAt = null;
+          completedAt = null;
+          taskTimes = {};
+          taskLocs = {};
+          updateSignatureUI();
           updateProgress();
           currentKey = stateKey();
           $("save-status").textContent = t("saveAuto");
@@ -1449,6 +1808,7 @@
           }
           $("p-fill").style.width = pct + "%";
           $("p-fill").classList.toggle("complete", done === total && total > 0);
+          syncSigLead();
         }
         document.addEventListener("change", function (e) {
           if (e.target && e.target.type === "checkbox") { updateProgress(); }
@@ -1516,6 +1876,7 @@
         function val(id) { return $(id).value.trim(); }
 
         function collect() {
+          syncCompletion();
           var sections = [];
           var cards = document.querySelectorAll("section.card[data-section]");
           cards.forEach(function (card) {
@@ -1537,7 +1898,7 @@
                 var label = b.closest("label");
                 var txt = (bkey && I18N.en.items[bkey]) ? I18N.en.items[bkey]
                   : (label ? label.querySelector(".txt").textContent.trim() : "");
-                items.push({ text: txt, done: b.checked });
+                items.push({ text: txt, done: b.checked, time: (bkey && taskTimes[bkey]) || null, loc: (bkey && taskLocs[bkey]) || null });
                 return;
               }
               var initInput = li.querySelector("#f-initials");
@@ -1548,7 +1909,9 @@
                 var base = I18N.en.initialsConfirm; // PDF stays English
                 items.push({
                   text: base + (initials ? " — Initials: " + initials : ""),
-                  done: initials !== ""
+                  done: initials !== "",
+                  time: taskTimes["__initials"] || null,
+                  loc: taskLocs["__initials"] || null
                 });
                 return;
               }
@@ -1558,7 +1921,9 @@
                 var answered = (eodAnswer === "Yes" || eodAnswer === "No");
                 items.push({
                   text: ynBase + (answered ? " — " + eodAnswer : ""),
-                  done: answered
+                  done: answered,
+                  time: taskTimes["__eod"] || null,
+                  loc: taskLocs["__eod"] || null
                 });
                 return;
               }
@@ -1585,7 +1950,13 @@
               whDepart: val("f-time-wh-depart")
             },
             sections: sections,
-            completedAt: new Date()
+            completedAt: new Date(),
+            completedAllAt: completedAt,
+            signature: {
+              lead: val("f-lead"),
+              name: val("f-sig-name"),
+              signedAt: sigSignedAt
+            }
           };
         }
 
@@ -1782,6 +2153,14 @@
           y -= 6;
           line(M, y, RIGHT, 0.75, 0.7); y -= 24;
 
+          /* Completion stamp: printed only when every counted item
+             was marked complete — the moment it reached 100%. */
+          if (data.completedAllAt) {
+            need(17);
+            text(M, y, "All tasks completed: " + fmtDateTime(data.completedAllAt), "F2", 11, 0.15);
+            y -= 22;
+          }
+
           /* Sections */
           var totalDone = 0, totalItems = 0;
           data.sections.forEach(function (sec, si) {
@@ -1796,7 +2175,21 @@
             sec.items.forEach(function (item) {
               totalItems++;
               if (item.done) { totalDone++; }
-              var lines = wrap(item.text, 10.5, RIGHT - M - 46);
+              // DONE items also carry their recorded time (and the
+              // coordinates captured when the item was checked, when
+              // the device returned them) — report-only data, never
+              // shown on the app screen.
+              var status = item.done ? "DONE" : "NOT DONE";
+              if (item.done && item.time) {
+                var timeStr = fmtTimeOnly(item.time);
+                if (timeStr) {
+                  status += " · " + timeStr;
+                  var coordStr = fmtCoord(item.loc);
+                  if (coordStr) { status += " · " + coordStr; }
+                }
+              }
+              var statusW = textWidth(status, 8);
+              var lines = wrap(item.text, 10.5, Math.max(120, RIGHT - M - 34 - statusW));
               need(14 * lines.length + 2);
               var topY = y;
               // Checkbox: 9pt square at left
@@ -1809,9 +2202,7 @@
               lines.forEach(function (ln, li) {
                 text(M + 20, y, ln, "F1", 10.5, item.done ? 0.25 : 0);
                 if (li === 0) {
-                  var status = item.done ? "DONE" : "NOT DONE";
-                  var sw = textWidth(status, 8);
-                  text(RIGHT - sw, y, status, "F2", 8, item.done ? 0.35 : 0.05);
+                  text(RIGHT - statusW, y, status, "F2", 8, item.done ? 0.35 : 0.05);
                   // tint NOT DONE darker handled by gray 0.05; keep visible
                 }
                 y -= 14;
@@ -1842,6 +2233,35 @@
           text(M, y, "Checklist completed: " + stamp, "F2", 10.5); y -= 15;
           text(M, y, totalDone + " of " + totalItems + " items checked" +
             (totalDone < totalItems ? " — items marked NOT DONE above still need attention." : " — everything checked off."), "F1", 10.5, 0.3);
+
+          /* Lead tech attestation & signature — always the very last
+             block on the report. When the checklist was signed, the
+             signature name and the recorded signing time print here. */
+          y -= 24;
+          need(96);
+          line(M, y, RIGHT, 0.75, 0.7); y -= 20;
+          textC(M, y, "LEAD TECH ATTESTATION", "F2", 11.5, "0 0.41 0.70"); y -= 6;
+          line(M, y, RIGHT, 0.85, 0.5); y -= 17;
+          para("Lead Tech Attestation: " + I18N.en.sigAttest, 10.5, "F1", 14, 0);
+          y -= 6;
+          var sig = data.signature || {};
+          var sigLines = [
+            ["Lead Tech", sig.lead || ""],
+            ["Signature", sig.signedAt ? (sig.name || "") : ""],
+            ["Time signed", sig.signedAt ? fmtDateTime(sig.signedAt) : ""]
+          ];
+          sigLines.forEach(function (f) {
+            need(17);
+            text(M, y, f[0] + ":", "F2", 10.5, 0.35);
+            var vlines = wrap(f[1] || "—", 10.5, RIGHT - M - 118);
+            text(M + 118, y, vlines[0], "F1", 10.5);
+            y -= 16;
+            for (var i = 1; i < vlines.length; i++) {
+              need(15);
+              text(M + 118, y, vlines[i], "F1", 10.5);
+              y -= 16;
+            }
+          });
 
           pages.push(ops.join("\n"));
 
@@ -2115,6 +2535,11 @@
           setType("packout");
           allBoxes().forEach(function (b) { b.checked = false; });
           setEodAnswer("", true);
+          sigSignedAt = null;
+          completedAt = null;
+          taskTimes = {};
+          taskLocs = {};
+          updateSignatureUI();
           updateProgress();
           currentKey = stateKey();
           disarmReset();
@@ -2244,6 +2669,9 @@
         if (emailBtn) {
           emailBtn.addEventListener("click", function () {
             try {
+              // Signature gate: no PDF is built or shared until the
+              // lead tech has signed at the bottom of the checklist.
+              if (!isSigned()) { requireSignature(); return; }
               hideError();
               clearPdfLinks();
               if (shareBtn) {
