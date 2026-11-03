@@ -191,8 +191,8 @@
       .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .grid2 .field { margin-bottom: 0; }
       @media (max-width: 340px) { .grid2 { grid-template-columns: 1fr; } }
-      /* Phone compaction: keeps the whole Job details card — including the
-         address field — clear of the fixed bottom bar on first load. */
+      /* Phone compaction: keeps the whole Job details card clear of the
+         fixed bottom bar on first load. */
       @media (max-width: 430px) {
         .brand-band { padding: 10px 12px; margin-bottom: 10px; }
         .brand-band img { width: 74%; }
@@ -671,20 +671,16 @@
           <label class="flabel" for="f-customer">Customer name</label>
           <input type="text" id="f-customer" placeholder="Customer name" autocomplete="off" />
         </div>
-        <div class="field">
-          <label class="flabel" for="f-address">Job address</label>
-          <input type="text" id="f-address" placeholder="Street, city" autocomplete="off" />
-        </div>
       </section>
 
       <!-- 1. Job file & paperwork -->
       <section class="card" data-section="Job file &amp; paperwork">
         <h2>1 · Job file &amp; paperwork</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Trash / disposal authorization signed (if items are being disposed)</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Job details reviewed (address, scope, contact) in Proven Jobs</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Customer called — arrival window confirmed</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">LiveSwitch project set up / phone charged for recording</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="trash-auth" /><span class="txt">Trash / disposal authorization signed (if items are being disposed)</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="job-details-reviewed" /><span class="txt">Job details reviewed (address, scope, contact) in Proven Jobs</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="customer-called" /><span class="txt">Customer called — arrival window confirmed</span></label></li>
+          <li id="liveswitch-setup-item"><label class="check"><input type="checkbox" data-key="liveswitch-setup" /><span class="txt">LiveSwitch project set up / phone charged for recording</span></label></li>
         </ul>
       </section>
 
@@ -696,7 +692,7 @@
           <input type="text" id="f-crew" placeholder="e.g. Jennifer P., Ben W., Alberto G." autocomplete="off" />
         </div>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Everyone has the address and start time</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="crew-address-time" /><span class="txt">Everyone has the address and start time</span></label></li>
         </ul>
       </section>
 
@@ -704,36 +700,40 @@
       <section class="card" data-section="Truck &amp; transport">
         <h2>3 · Truck &amp; transport</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Truck fueled (WEX card in truck)</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Dollies, hand truck, and straps loaded</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">UNITS container delivery or pickup confirmed (if this job uses one)</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="truck-fueled" /><span class="txt">Truck fueled (WEX card in truck)</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="truck-checked" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="dollies-straps" /><span class="txt">Dollies, hand truck, and straps loaded</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="units-confirmed" /><span class="txt">UNITS container delivery or pickup confirmed (if this job uses one)</span></label></li>
         </ul>
       </section>
 
-      <!-- 4. Supplies loaded -->
-      <section class="card" data-section="Supplies loaded">
+      <!-- 4. Supplies loaded (packout only: hidden on packbacks) -->
+      <section class="card" id="supplies-section" data-section="Supplies loaded">
         <h2>4 · Supplies loaded</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Boxes — small / medium / large</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Tape and dispensers</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Packing paper and bubble wrap</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Furniture pads / blankets</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Shrink wrap</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Labels and markers</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Floor protection and corner protectors</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Trash bags</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Basic tool kit</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="boxes-sml" /><span class="txt">Boxes — small / medium / large</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="tape-dispensers" /><span class="txt">Tape and dispensers</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="paper-bubble" /><span class="txt">Packing paper and bubble wrap</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="wardrobe-boxes" /><span class="txt">Wardrobe boxes</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="picture-mirror-boxes" /><span class="txt">Picture / mirror boxes</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="lamp-boxes" /><span class="txt">Lamp boxes</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="dish-pack-boxes" /><span class="txt">Dish pack boxes</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="furniture-pads" /><span class="txt">Furniture pads / blankets</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="shrink-wrap" /><span class="txt">Shrink wrap</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="labels-markers" /><span class="txt">Labels and markers</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="floor-protection" /><span class="txt">Floor protection and corner protectors</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="trash-bags" /><span class="txt">Trash bags</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="tool-kit" /><span class="txt">Basic tool kit</span></label></li>
         </ul>
       </section>
 
       <!-- 5. Packback only -->
       <section class="card hidden" id="packback-section" data-section="Packback checks">
-        <h2>5 · Packback checks</h2>
+        <h2 id="packback-heading">4 · Packback checks</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Pull list / inventory list in hand</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Vault or unit numbers confirmed</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Items verified against inventory before loading</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="pull-list" /><span class="txt">Pull list / inventory list in hand</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="vault-numbers" /><span class="txt">Vault or unit numbers confirmed</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="items-verified" /><span class="txt">Items verified against inventory before loading</span></label></li>
         </ul>
       </section>
 
@@ -741,8 +741,8 @@
       <section class="card" data-section="Before leaving the warehouse">
         <h2 id="final-heading">5 · Before leaving the warehouse</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Weather checked — rain supplies / plastic loaded if needed</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Load plan reviewed with crew</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="weather-checked" /><span class="txt">Weather checked — rain supplies / plastic loaded if needed</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="load-plan" /><span class="txt">Load plan reviewed with crew</span></label></li>
           <li id="initials-item" class="hidden">
             <div class="init-row">
               <span class="txt">Confirm all insured items are loaded</span>
@@ -752,7 +752,7 @@
               </span>
             </div>
           </li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Warehouse secured / doors locked</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="warehouse-secured-leaving" /><span class="txt">Warehouse secured / doors locked</span></label></li>
         </ul>
       </section>
 
@@ -760,15 +760,15 @@
       <section class="card" data-section="During the day">
         <h2 id="during-heading">6 · During the day</h2>
         <ul class="checks">
-          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-in video on LiveSwitch</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Contact with insured</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Photos on iCat</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Secure furniture</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-out video on LiveSwitch</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Walk-out photos on iCat (final day)</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Organize work area</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Secure truck</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Clean all trash before leaving</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="walk-in-video" /><span class="txt">Walk-in video on LiveSwitch</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="contact-insured" /><span class="txt">Contact with insured</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="photos-icat" /><span class="txt">Photos on iCat</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="secure-furniture" /><span class="txt">Secure furniture</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="walk-out-video" /><span class="txt">Walk-out video on LiveSwitch</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="walk-out-photos" /><span class="txt">Walk-out photos on iCat (final day)</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="organize-work-area" /><span class="txt">Organize work area</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="secure-truck" /><span class="txt">Secure truck</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="clean-trash" /><span class="txt">Clean all trash before leaving</span></label></li>
         </ul>
       </section>
 
@@ -785,14 +785,15 @@
               </div>
             </div>
           </li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Truck driver filled out driving log</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Contents transferred to vaults</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Equipment returned to its place</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">LiveSwitch videos uploaded</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">iCat contents uploaded to cloud</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Close and secure loading dock bay</span></label></li>
-          <li><label class="check"><input type="checkbox" /><span class="txt">Warehouse secured / doors locked</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="eod-truck-checked" /><span class="txt">Truck checked: lights, tires, liftgate / ramp</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="driving-log" /><span class="txt">Truck driver filled out driving log</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="contents-vaults" /><span class="txt">Contents transferred to vaults</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="equipment-returned" /><span class="txt">Equipment returned to its place</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="liveswitch-uploaded" /><span class="txt">LiveSwitch videos uploaded</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="icat-uploaded" /><span class="txt">iCat contents uploaded to cloud</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="dock-bay" /><span class="txt">Close and secure loading dock bay</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="eod-warehouse-secured" /><span class="txt">Warehouse secured / doors locked</span></label></li>
+          <li><label class="check"><input type="checkbox" data-key="charge-batteries" /><span class="txt">Charge all tool batteries and scanning device</span></label></li>
         </ul>
       </section>
 
@@ -815,7 +816,7 @@
     <div class="bar">
       <div class="bar-inner">
         <div class="pmeta">
-          <span class="count" id="p-count">0 of 39 checked</span>
+          <span class="count" id="p-count">0 of 44 checked</span>
           <span class="save-status" id="save-status">Auto-saves on this phone</span>
           <span class="pct" id="p-pct"></span>
         </div>
@@ -872,6 +873,9 @@
         var btnPackout = $("type-packout");
         var btnPackback = $("type-packback");
         var packbackSection = $("packback-section");
+        var suppliesSection = $("supplies-section");
+        var liveswitchSetupItem = $("liveswitch-setup-item");
+        var packbackHeading = $("packback-heading");
         var initialsItem = $("initials-item");
         var finalHeading = $("final-heading");
         var duringHeading = $("during-heading");
@@ -897,13 +901,25 @@
           btnPackout.setAttribute("aria-pressed", jobType === "packout" ? "true" : "false");
           btnPackback.setAttribute("aria-pressed", jobType === "packback" ? "true" : "false");
           packbackSection.classList.toggle("hidden", jobType !== "packback");
+          // Supplies loaded is packout-only: hidden on packbacks. The
+          // checks themselves are left untouched in the saved state, so
+          // switching back to Packout restores them.
+          if (suppliesSection) { suppliesSection.classList.toggle("hidden", jobType !== "packout"); }
+          // LiveSwitch project setup is packout-only: hidden on packbacks.
+          // The checked state itself is left untouched in the saved
+          // state, so switching back to Packout restores it.
+          if (liveswitchSetupItem) { liveswitchSetupItem.classList.toggle("hidden", jobType !== "packout"); }
           // The initials sign-off is packback-only: hidden on packouts.
           // The typed value itself is left untouched, so switching back
           // to Packback restores it.
           if (initialsItem) { initialsItem.classList.toggle("hidden", jobType !== "packback"); }
-          finalHeading.textContent = (jobType === "packback" ? "6" : "5") + " · Before leaving the warehouse";
-          duringHeading.textContent = (jobType === "packback" ? "7" : "6") + " · During the day";
-          if (eodHeading) { eodHeading.textContent = (jobType === "packback" ? "8" : "7") + " · End of day"; }
+          // Section numbers stay continuous either way: exactly one of
+          // Supplies loaded (packout) / Packback checks (packback) is
+          // section 4, so the later sections keep the same numbers.
+          if (packbackHeading) { packbackHeading.textContent = "4 · Packback checks"; }
+          finalHeading.textContent = "5 · Before leaving the warehouse";
+          duringHeading.textContent = "6 · During the day";
+          if (eodHeading) { eodHeading.textContent = "7 · End of day"; }
           updateProgress();
         }
         btnPackout.addEventListener("click", function () { setType("packout"); saveState(); });
@@ -925,7 +941,6 @@
         }
         prefill("job", "f-job");
         prefill("customer", "f-customer");
-        prefill("address", "f-address");
         prefill("lead", "f-lead");
         prefill("date", "f-date");
         var typeParam = params.get("type");
@@ -933,7 +948,7 @@
 
         /* ---------- Auto-save on this phone (per job) ---------- */
         var SAVE_PREFIX = "bkpackz-ltc:";
-        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-address", "f-crew", "f-notes", "f-initials"];
+        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-customer", "f-crew", "f-notes", "f-initials"];
         var currentKey = null;
         var saveStatusTimer = null;
 
@@ -961,12 +976,46 @@
           return document.querySelectorAll('ul.checks input[type="checkbox"]');
         }
 
+        // Saved progress (v2) stores each checkbox under its stable
+        // data-key, so inserting or reordering items never remaps an
+        // older save onto the wrong boxes. LEGACY_CHECK_ORDER is the
+        // on-page checkbox order used by v1 saves (a positional array)
+        // before the four box types were added to Supplies loaded;
+        // it translates those saves onto the same items by key.
+        var LEGACY_CHECK_ORDER = [
+          "trash-auth", "job-details-reviewed", "customer-called", "liveswitch-setup",
+          "crew-address-time",
+          "truck-fueled", "truck-checked", "dollies-straps", "units-confirmed",
+          "boxes-sml", "tape-dispensers", "paper-bubble", "furniture-pads",
+          "shrink-wrap", "labels-markers", "floor-protection", "trash-bags", "tool-kit",
+          "pull-list", "vault-numbers", "items-verified",
+          "weather-checked", "load-plan", "warehouse-secured-leaving",
+          "walk-in-video", "contact-insured", "photos-icat", "secure-furniture",
+          "walk-out-video", "walk-out-photos", "organize-work-area", "secure-truck",
+          "clean-trash",
+          "eod-truck-checked", "driving-log", "contents-vaults", "equipment-returned",
+          "liveswitch-uploaded", "icat-uploaded", "dock-bay", "eod-warehouse-secured",
+          "charge-batteries"
+        ];
+
+        function boxByKey() {
+          var map = {};
+          allBoxes().forEach(function (b) {
+            var k = b.getAttribute("data-key");
+            if (k) { map[k] = b; }
+          });
+          return map;
+        }
+
         function snapshot() {
           var fields = {};
           FIELD_IDS.forEach(function (id) { fields[id] = $(id).value; });
-          var checks = [];
-          allBoxes().forEach(function (b) { checks.push(!!b.checked); });
-          return { v: 1, type: jobType, fields: fields, checks: checks, eodAnswer: eodAnswer, savedAt: Date.now() };
+          var checks = {};
+          allBoxes().forEach(function (b) {
+            var k = b.getAttribute("data-key");
+            if (k) { checks[k] = !!b.checked; }
+          });
+          return { v: 2, type: jobType, fields: fields, checks: checks, eodAnswer: eodAnswer, savedAt: Date.now() };
         }
 
         function flashSaved() {
@@ -1003,10 +1052,20 @@
           }
           if (s.type) { setType(s.type); }
           if (Array.isArray(s.checks)) {
-            var boxes = allBoxes();
-            for (var i = 0; i < boxes.length && i < s.checks.length; i++) {
-              boxes[i].checked = !!s.checks[i];
+            // v1 save: positional array in the pre-insertion order —
+            // translate each position to its item by key so the checks
+            // land on the same items they were saved on.
+            var byKey = boxByKey();
+            for (var i = 0; i < s.checks.length && i < LEGACY_CHECK_ORDER.length; i++) {
+              var lb = byKey[LEGACY_CHECK_ORDER[i]];
+              if (lb) { lb.checked = !!s.checks[i]; }
             }
+          } else if (s.checks && typeof s.checks === "object") {
+            // v2 save: checks keyed by data-key.
+            var byKey2 = boxByKey();
+            Object.keys(s.checks).forEach(function (k) {
+              if (byKey2[k]) { byKey2[k].checked = !!s.checks[k]; }
+            });
           }
           if (typeof s.eodAnswer === "string") { setEodAnswer(s.eodAnswer, true); }
           updateProgress();
@@ -1072,7 +1131,6 @@
           $("f-date").value = todayISO();
           prefill("job", "f-job");
           prefill("customer", "f-customer");
-          prefill("address", "f-address");
           prefill("lead", "f-lead");
           prefill("date", "f-date");
           setType(typeParam ? typeParam.toLowerCase() : "packout");
@@ -1090,7 +1148,10 @@
           var out = [];
           for (var i = 0; i < all.length; i++) {
             var sec = all[i].closest("section");
-            if (!sec || !sec.classList.contains("hidden")) { out.push(all[i]); }
+            if (sec && sec.classList.contains("hidden")) { continue; }
+            var li = all[i].closest("li");
+            if (li && li.classList.contains("hidden")) { continue; }
+            out.push(all[i]);
           }
           return out;
         }
@@ -1252,7 +1313,6 @@
             job: val("f-job"),
             lead: val("f-lead"),
             customer: val("f-customer"),
-            address: val("f-address"),
             notes: val("f-notes"),
             sections: sections,
             completedAt: new Date()
@@ -1418,7 +1478,6 @@
             ["Lead Technician", data.lead || "—"],
             ["Job Number", data.job || "—"],
             ["Customer", data.customer || "—"],
-            ["Address", data.address || "—"],
             ["Job Type", data.type]
           ];
           fields.forEach(function (f) {

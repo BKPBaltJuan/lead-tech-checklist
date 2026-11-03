@@ -36,4 +36,6 @@ separately on their phones and are not wiped by an update.
   On restricted in-app browsers, use the confirmation screen's
   Open PDF / Download PDF links — those are direct taps and always work.
 - Morning links can pre-fill a job:
-  `?job=<job number>&customer=<name>&type=packout|packback&address=<address>&lead=<name>&date=YYYY-MM-DD`
+  `?job=<job number>&customer=<name>&type=packout|packback&lead=<name>&date=YYYY-MM-DD`
+  (There is deliberately no address field — customer addresses are kept out of
+  the app for privacy.)
