@@ -505,6 +505,11 @@
         padding: 1px 8px;
       }
       .note-text { font-size: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .note-text a {
+        color: var(--heading); text-decoration: underline;
+        text-underline-offset: 2px; overflow-wrap: anywhere;
+        padding: 2px 0;
+      }
       #notes-input { min-height: 64px; }
       .notes-actions { margin-top: 10px; display: flex; }
       .notes-actions .btn { flex: 1; }
@@ -2152,6 +2157,38 @@
           return decorated.map(function (d) { return d.e; });
         }
 
+        // Escape HTML first, then turn URLs in the escaped text into
+        // tappable links, so note content can never inject markup.
+        // Only http/https hrefs are produced; bare www. addresses get
+        // an https:// prefix. Trailing sentence punctuation is left
+        // outside the link.
+        function linkifyNoteText(text) {
+          var escaped = String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+          return escaped.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi, function (m) {
+            var trail = "";
+            while (m.length) {
+              if (/[.,)\]!?]/.test(m.charAt(m.length - 1))) {
+                trail = m.charAt(m.length - 1) + trail;
+                m = m.slice(0, -1);
+              } else if (m.slice(-6) === "&quot;") {
+                trail = "&quot;" + trail;
+                m = m.slice(0, -6);
+              } else if (m.slice(-5) === "&#39;") {
+                trail = "&#39;" + trail;
+                m = m.slice(0, -5);
+              } else { break; }
+            }
+            if (!m || /^www\.$/i.test(m)) { return m + trail; }
+            var href = /^www\./i.test(m) ? "https://" + m : m;
+            return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + m + "</a>" + trail;
+          });
+        }
+
         function renderNotesList() {
           var listEl = $("notes-list");
           if (!listEl) { return; }
@@ -2194,7 +2231,7 @@
             }
             var body = document.createElement("div");
             body.className = "note-text";
-            body.textContent = e.note || "";
+            body.innerHTML = linkifyNoteText(e.note || "");
             wrap.appendChild(meta);
             wrap.appendChild(body);
             listEl.appendChild(wrap);
@@ -2368,7 +2405,6 @@
           var job = $("f-job").value.trim();
           var input = $("notes-input");
           if (!job) {
-            try { window.alert(t("notesNeedJob")); } catch (e) { /* sandboxed frames block alerts */ }
             toast(t("notesNeedJob"));
             return;
           }
