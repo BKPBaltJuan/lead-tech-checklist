@@ -3250,9 +3250,24 @@
            re-gates on reopen. Send is gated the same way (see the
            Send handler below). This gate is separate from the
            per-task time/GPS stamps and the display-only
-           current-location line, which keep working as before. */
+           current-location line, which keep working as before.
+           Desktop exception (owner's rule, 2026-11-06): in desktop
+           view there is no location requirement at all — the gate
+           never shows, no fix is demanded at Send, and the PDF
+           simply omits the location line when no fix is on record. */
         var geoGateShown = false;
         var geoCaptureBusy = false;
+
+        // Desktop view: a wide viewport with a fine pointer (mouse /
+        // trackpad). Evaluated at call time so it follows the
+        // current window, and false on phones and tablets no matter
+        // how they are rotated.
+        function isDesktopView() {
+          try {
+            return !!(window.matchMedia &&
+              window.matchMedia("(min-width: 1024px) and (pointer: fine)").matches);
+          } catch (e) { return false; }
+        }
 
         // One capture attempt, promise-based: resolves with the fix
         // or null (denied, unavailable, timed out, or no geolocation
@@ -3381,6 +3396,9 @@
         // gate goes up and a capture is attempted.
         function enforceStartGate() {
           if (jobFix) { hideGeoGate(); renderLocDeferred(); return; }
+          // Desktop view: no location requirement — the checklist
+          // opens without a fix and never enters deferred mode.
+          if (isDesktopView()) { hideGeoGate(); renderLocDeferred(); return; }
           if (navigator.onLine === false) { enterDeferredMode(); return; }
           showGeoGate();
           attemptStartCapture();
@@ -3413,6 +3431,11 @@
         // applies — open the checklist in deferred mode.
         window.addEventListener("offline", function () {
           if (!jobFix && geoGateShown) { enterDeferredMode(); }
+        });
+        // Window widened into desktop view while the gate is up:
+        // the desktop exception applies — lift the gate.
+        window.addEventListener("resize", function () {
+          if (!jobFix && geoGateShown && isDesktopView()) { hideGeoGate(); }
         });
 
         enforceStartGate();
@@ -4494,6 +4517,9 @@
               proceedWithSend();
               return;
             }
+            // Desktop view with no fix: no location requirement —
+            // the send proceeds and the PDF omits the location line.
+            if (isDesktopView()) { proceedWithSend(); return; }
             // Offline with no fix: the send proceeds in deferred
             // mode — the PDF prints the offline location line.
             if (navigator.onLine === false) { proceedWithSend(); return; }
