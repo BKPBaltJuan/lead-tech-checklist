@@ -130,8 +130,9 @@
       .time-field { margin: 2px 0 12px; }
       .time-field.after-list { margin: 12px 0 0; }
       input[type="time"] { max-width: 220px; }
-      /* Times card two-column layout: departures in the left
-         column, start/arrival in the right column. */
+      /* Times card two-column layout: Warehouse start top-left,
+         Jobsite arrival top-right, Jobsite departure bottom-left,
+         Warehouse departure bottom-right. */
       .times-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; align-items: start; }
       .times-col { display: flex; flex-direction: column; min-width: 0; }
       .times-col .time-field { margin: 2px 0 12px; }
@@ -954,20 +955,28 @@
          phone-first; below this breakpoint NOTHING in this block
          applies, so the compact single-column phone layout — tight
          spacing, no extra padding — is exactly as it was. On
-         desktop the content column widens and the section cards
-         flow two per row in checklist order; the header, Job
+         desktop the layout uses the full available width — no
+         capped content column, no wasted space at the sides —
+         and the section cards flow two per row in checklist
+         order (three per row on very wide screens, 1600px and
+         up; see the block after this one); the header, Job
          details, and the reset row span the full width, and the
          Times + Final Day cards pair up side by side (Times keeps
-         its own departures-left two-column layout inside). The
+         its own two-column times layout inside). Cards stretch
+         to fill their grid row (align-items: stretch), so a
+         shorter section sits flush beside its taller neighbour
+         instead of leaving a blank gap of page background under
+         it — rows stay tight and even, separated only by the
+         cards' uniform bottom margin. The
          bottom Send bar widens to match the content column. */
       @media (min-width: 1024px) and (pointer: fine) {
         .wrap {
-          max-width: 1200px;
+          max-width: none;
           padding: 24px 32px 12px;
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           column-gap: 18px;
-          align-items: start;
+          align-items: stretch;
           align-content: start;
         }
         .wrap > .brand-band,
@@ -997,13 +1006,21 @@
            column, roomier padding, button capped and centered
            in its row instead of stretching edge to edge. */
         .bar { padding: 8px 32px calc(8px + env(safe-area-inset-bottom)); }
-        .bar-inner { max-width: 1136px; }
+        .bar-inner { max-width: none; }
         .bar .actions { justify-content: center; }
         .btn-email { flex: 0 1 560px; min-height: 52px; }
         .notes-prompt { margin: 4px 0 8px; }
         /* Confirmation + location-gate cards get a little more
            presence on a wide screen. */
         .confirm-card, .geo-gate-card { max-width: 560px; padding: 32px 28px 26px; }
+      }
+
+      /* Very wide screens: three section cards per row, so the
+         full-width layout stays tight and readable instead of
+         stretching two very long columns. Same stretch rule —
+         no blank gaps between section areas. */
+      @media (min-width: 1600px) and (pointer: fine) {
+        .wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
       }
 
       /* Print the whole form, not just the visible scroll area. */
@@ -1399,22 +1416,22 @@
         <div class="times-grid">
           <div class="times-col">
             <div class="field time-field">
-              <label class="flabel" for="f-time-leave-site" data-i18n="tJobsiteDeparture">Jobsite departure time</label>
-              <input type="time" id="f-time-leave-site" />
-            </div>
-            <div class="field time-field">
-              <label class="flabel" for="f-time-wh-depart" data-i18n="tWarehouseDeparture">Warehouse departure time</label>
-              <input type="time" id="f-time-wh-depart" />
-            </div>
-          </div>
-          <div class="times-col">
-            <div class="field time-field">
               <label class="flabel" for="f-time-wh-start" data-i18n="tWarehouseStart">Warehouse start time</label>
               <input type="time" id="f-time-wh-start" />
             </div>
             <div class="field time-field">
+              <label class="flabel" for="f-time-leave-site" data-i18n="tJobsiteDeparture">Jobsite departure time</label>
+              <input type="time" id="f-time-leave-site" />
+            </div>
+          </div>
+          <div class="times-col">
+            <div class="field time-field">
               <label class="flabel" for="f-time-arrive" data-i18n="tJobsiteArrival">Jobsite arrival time</label>
               <input type="time" id="f-time-arrive" />
+            </div>
+            <div class="field time-field">
+              <label class="flabel" for="f-time-wh-depart" data-i18n="tWarehouseDeparture">Warehouse departure time</label>
+              <input type="time" id="f-time-wh-depart" />
             </div>
           </div>
         </div>
