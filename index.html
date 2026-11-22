@@ -237,9 +237,9 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-soft);
       }
-      /* Customer selector dropdown: styled like the text fields,
+      /* Lead selector dropdown: styled like the text fields,
          with the native arrow kept so it reads as tap-to-pick. */
-      select.customer-select, select.lead-select {
+      select.lead-select {
         width: 100%;
         font: inherit;
         font-size: 17px;
@@ -252,7 +252,7 @@
         margin-bottom: 8px;
         cursor: pointer;
       }
-      select.customer-select:focus, select.lead-select:focus {
+      select.lead-select:focus {
         outline: none;
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-soft);
@@ -260,6 +260,45 @@
       /* Lead technician dropdown: no gap under the select itself —
          the "Other" name field carries the spacing when it shows. */
       select.lead-select { margin-bottom: 0; }
+      /* Customer write box with autofill: the suggestion panel drops
+         down under the text input, listing matching customers from
+         the jobs snapshot (name + job number). It overlays the
+         content below instead of pushing it down, scrolls when the
+         match list is long, and each row is a big tap target. */
+      .customer-wrap { position: relative; }
+      .customer-suggest {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0; right: 0;
+        z-index: 25;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 10px 28px rgba(4, 24, 36, 0.22);
+        max-height: 264px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px;
+      }
+      .customer-option {
+        font: inherit;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        text-align: start;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 10px;
+        min-height: 48px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .customer-option .cust-name { font-size: 16.5px; font-weight: 600; overflow-wrap: anywhere; }
+      .customer-option .cust-job { font-size: 13.5px; font-weight: 700; color: var(--ink-soft); flex: 0 0 auto; }
+      .customer-option.active, .customer-option:active { background: var(--accent-soft); }
       /* Job type field: one compact tappable row in Job details,
          styled like the dropdown selects — full width, same border
          and padding — with the current type and a chevron. */
@@ -339,7 +378,7 @@
       .type-option.selected { border-color: var(--accent); background: var(--accent-soft); }
       .type-option.selected .type-check { visibility: visible; }
       .type-sheet-cancel { width: 100%; }
-      #f-lead-other, #f-customer-other { margin-top: 8px; }
+      #f-lead-other { margin-top: 8px; }
       .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .grid2 .field { margin-bottom: 0; }
       @media (max-width: 340px) { .grid2 { grid-template-columns: 1fr; } }
@@ -354,7 +393,7 @@
         .field { margin-bottom: 9px; }
         .seg button { min-height: 46px; padding: 10px 8px; }
         input[type="text"], input[type="date"], input[type="time"] { min-height: 46px; padding: 10px 12px; }
-        select.customer-select, select.lead-select { min-height: 46px; padding: 10px 12px; }
+        select.lead-select { min-height: 46px; padding: 10px 12px; }
         .type-field { min-height: 46px; padding: 10px 12px; }
         .btn { min-height: 44px; padding: 8px 12px; font-size: 16px; }
       }
@@ -1048,7 +1087,7 @@
          never side-by-side columns. The content uses the full
          available width — no capped content column, no wasted
          space at the sides — and the fill bars (text / date /
-         time inputs, textareas, the customer selector, and the
+         time inputs, textareas, the customer write box, and the
          Packout/Packback toggle) stretch with it instead of
          staying phone-width. Cards stack with one uniform
          bottom margin, so there are no blank gaps between
@@ -1085,7 +1124,7 @@
       @media print {
         body { height: auto; display: block; }
         .wrap { overflow: visible; display: block; }
-        .bar, .confirm-overlay, .geo-gate, .type-sheet, .loc-deferred-line, .net-row, .top-controls, .loc-row, #tech-notes-card { display: none; }
+        .bar, .confirm-overlay, .geo-gate, .type-sheet, .customer-suggest, .loc-deferred-line, .net-row, .top-controls, .loc-row, #tech-notes-card { display: none; }
       }
     </style>
   </head>
@@ -1185,21 +1224,20 @@
         </div>
         <div class="field">
           <label class="flabel" for="f-customer" data-i18n="customerName">Customer name</label>
-          <!-- Customer: ONE field, working like the Lead technician
-               field — a tap-to-pick dropdown of the scheduled
-               customers from the embedded jobs snapshot (options are
-               added by script from JOB_DAYS, labelled with name +
-               job number), plus "Other", which reveals a text field
-               for a customer who isn't listed. The effective name
-               (the picked customer, or the typed Other name) is the
-               single customer value everywhere — per-job save, the
-               PDF header, Tech Notes, and the submission — see
-               getCustomerValue / setCustomerValue in the script. -->
-          <select id="f-customer" class="customer-select" aria-label="Customer name">
-            <option value="" data-i18n="selectCustomer">Select a customer…</option>
-            <option value="__other__" data-i18n="leadOther">Other</option>
-          </select>
-          <input type="text" id="f-customer-other" class="hidden" placeholder="Customer name" autocomplete="off" data-i18n-ph="phCustomer" aria-label="Customer name" />
+          <!-- Customer: ONE write box with autofill. The tech types
+               the customer name and matching suggestions drop down
+               from every customer in the embedded jobs snapshot
+               (built by script from JOB_DAYS, each shown with its
+               job number). Picking a suggestion fills the name and
+               its Job #; a name that isn't listed can simply be
+               typed and kept. The typed name is the single customer
+               value everywhere — per-job save, the PDF header, Tech
+               Notes, and the submission — see getCustomerValue /
+               setCustomerValue in the script. -->
+          <div class="customer-wrap">
+            <input type="text" id="f-customer" placeholder="Customer name" autocomplete="off" data-i18n-ph="phCustomer" aria-label="Customer name" role="combobox" aria-expanded="false" aria-controls="customer-suggest" aria-autocomplete="list" />
+            <div id="customer-suggest" class="customer-suggest hidden" role="listbox" aria-label="Customer suggestions"></div>
+          </div>
         </div>
         <div class="field">
           <label class="flabel" for="f-phone" data-i18n="customerPhone">Customer phone</label>
@@ -2254,65 +2292,157 @@
         }
         syncLeadOtherVisibility();
 
-        /* ---------- Customer name (single field) ----------
-           The Customer name lives in ONE field, built exactly like
-           the Lead technician field above: a dropdown of the known
-           customers (filled from the jobs snapshot further down)
-           plus an "Other" choice that reveals a free-text name
-           field (select or fill). Everywhere the app needs the
-           customer — per-job save/restore, the save-slot key, the
-           PDF header, Tech Notes, and the checklist submission — it
-           uses the EFFECTIVE name from getCustomerValue(): the
-           picked customer, or the typed Other name when "Other" is
-           chosen. setCustomerValue() is the single entry point for
-           putting a name INTO the field (URL prefill, jobs-snapshot
-           autofill, saved-state restore): a name matching a listed
-           customer selects it; any other non-empty name lands in
-           the Other text field. Note the dropdown options are only
-           added later (fillCustomerList), so a name set before that
-           sits in the Other field until fillCustomerList re-applies
-           it and a listed name becomes a real selection. */
-        var CUSTOMER_OTHER_VALUE = "__other__";
-        function syncCustomerOtherVisibility() {
-          var sel = $("f-customer");
-          var other = $("f-customer-other");
-          if (!sel || !other) { return; }
-          other.classList.toggle("hidden", sel.value !== CUSTOMER_OTHER_VALUE);
-        }
+        /* ---------- Customer name (single write box with autofill) ----------
+           The Customer name lives in ONE field: a plain text write
+           box. As the tech types, matching suggestions drop down
+           from every customer in the jobs snapshot (CUSTOMER_SUGGESTIONS,
+           built from JOB_DAYS further down — one row per customer +
+           job, so a customer with several jobs appears once per job,
+           each labelled with its job number). Picking a suggestion
+           fills the name and runs the usual autofill for that job;
+           a name that isn't listed can simply be typed and kept.
+           Everywhere the app needs the customer — per-job
+           save/restore, the save-slot key, the PDF header, Tech
+           Notes, and the checklist submission — it uses the typed
+           name from getCustomerValue(). setCustomerValue() is the
+           single entry point for putting a name INTO the field
+           (URL prefill, jobs-snapshot autofill, saved-state restore). */
+        var CUSTOMER_SUGGESTIONS = []; // filled from JOB_DAYS below
+        var custSuggestActive = -1;
         function getCustomerValue() {
-          var sel = $("f-customer");
-          if (!sel) { return ""; }
-          if (sel.value === CUSTOMER_OTHER_VALUE) {
-            var other = $("f-customer-other");
-            return other ? other.value.trim() : "";
-          }
-          return (sel.value || "").trim();
+          var el = $("f-customer");
+          if (!el) { return ""; }
+          return (el.value || "").trim();
         }
         function setCustomerValue(name) {
-          var sel = $("f-customer");
-          var other = $("f-customer-other");
-          if (!sel) { return; }
-          var v = (name === null || name === undefined) ? "" : String(name).trim();
-          var match = "";
-          if (v) {
-            for (var i = 0; i < sel.options.length; i++) {
-              var ov = sel.options[i].value;
-              if (ov && ov !== CUSTOMER_OTHER_VALUE && ov.toLowerCase() === v.toLowerCase()) { match = ov; break; }
-            }
-          }
-          if (match) {
-            sel.value = match;
-            if (other) { other.value = ""; }
-          } else if (v) {
-            sel.value = CUSTOMER_OTHER_VALUE;
-            if (other) { other.value = v; }
-          } else {
-            sel.value = "";
-            if (other) { other.value = ""; }
-          }
-          syncCustomerOtherVisibility();
+          var el = $("f-customer");
+          if (!el) { return; }
+          el.value = (name === null || name === undefined) ? "" : String(name).trim();
+          hideCustomerSuggestions();
         }
-        syncCustomerOtherVisibility();
+        function hideCustomerSuggestions() {
+          var panel = $("customer-suggest");
+          var el = $("f-customer");
+          if (panel) { panel.classList.add("hidden"); panel.innerHTML = ""; }
+          if (el) { el.setAttribute("aria-expanded", "false"); }
+          custSuggestActive = -1;
+        }
+        function customerMatches(query) {
+          var q = (query || "").trim().toLowerCase();
+          if (!q) { return CUSTOMER_SUGGESTIONS.slice(); }
+          return CUSTOMER_SUGGESTIONS.filter(function (s) {
+            return s.customer.toLowerCase().indexOf(q) >= 0 || s.job.toLowerCase().indexOf(q) >= 0;
+          });
+        }
+        function renderCustomerSuggestions() {
+          var el = $("f-customer");
+          var panel = $("customer-suggest");
+          if (!el || !panel) { return; }
+          var matches = customerMatches(el.value);
+          custSuggestActive = -1;
+          panel.innerHTML = "";
+          if (!matches.length) {
+            panel.classList.add("hidden");
+            el.setAttribute("aria-expanded", "false");
+            return;
+          }
+          matches.forEach(function (s, idx) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "customer-option";
+            btn.setAttribute("role", "option");
+            btn.setAttribute("aria-selected", "false");
+            var nameSpan = document.createElement("span");
+            nameSpan.className = "cust-name";
+            nameSpan.textContent = s.customer;
+            var jobSpan = document.createElement("span");
+            jobSpan.className = "cust-job";
+            jobSpan.textContent = s.job;
+            btn.appendChild(nameSpan);
+            btn.appendChild(jobSpan);
+            // mousedown fires before the input's blur, so the pick
+            // lands before the panel would close; preventDefault
+            // keeps focus in the write box.
+            btn.addEventListener("mousedown", function (ev) {
+              ev.preventDefault();
+              pickCustomerSuggestion(idx);
+            });
+            btn.addEventListener("click", function () { pickCustomerSuggestion(idx); });
+            panel.appendChild(btn);
+          });
+          panel.classList.remove("hidden");
+          el.setAttribute("aria-expanded", "true");
+        }
+        var custJustPickedAt = 0;
+        function pickCustomerSuggestion(idx) {
+          var el = $("f-customer");
+          var panel = $("customer-suggest");
+          if (!el || !panel) { return; }
+          // A tap fires mousedown then click for the same pick; the
+          // mousedown pick closes the panel, so ignore the click
+          // that trails it (its index was computed against the
+          // now-closed list).
+          if (Date.now() - custJustPickedAt < 400) { return; }
+          var matches = customerMatches(el.value);
+          var s = matches[idx];
+          if (!s) { return; }
+          custJustPickedAt = Date.now();
+          setCustomerValue(s.customer);
+          // Fill this suggestion's own job (a customer can have
+          // several): autofill with just that job's snapshot rows.
+          var rows = JOB_DAYS.filter(function (r) {
+            return r.customer.toLowerCase() === s.customer.toLowerCase() && r.job.toLowerCase() === s.job.toLowerCase();
+          });
+          applyAutofill(rows, "customer");
+        }
+        function setCustomerSuggestActive(idx) {
+          var panel = $("customer-suggest");
+          if (!panel) { return; }
+          var opts = panel.querySelectorAll(".customer-option");
+          if (!opts.length) { return; }
+          if (idx < 0) { idx = opts.length - 1; }
+          if (idx >= opts.length) { idx = 0; }
+          custSuggestActive = idx;
+          opts.forEach(function (o, i) {
+            o.classList.toggle("active", i === idx);
+            o.setAttribute("aria-selected", i === idx ? "true" : "false");
+          });
+          if (opts[idx].scrollIntoView) { opts[idx].scrollIntoView({ block: "nearest" }); }
+        }
+        var custInputEl = $("f-customer");
+        if (custInputEl) {
+          custInputEl.addEventListener("input", function () {
+            renderCustomerSuggestions();
+            // Typing a listed customer's full name runs the same
+            // autofill as picking it (Job #, Type, and Date/Lead
+            // for a single-day match); any other typed name is
+            // simply kept as-is.
+            applyAutofill(rowsForCustomer(custInputEl.value), "customer");
+          });
+          custInputEl.addEventListener("focus", function () {
+            renderCustomerSuggestions();
+          });
+          custInputEl.addEventListener("blur", function () {
+            // Short delay so a tap on a suggestion registers first.
+            setTimeout(hideCustomerSuggestions, 150);
+          });
+          custInputEl.addEventListener("keydown", function (ev) {
+            var panel = $("customer-suggest");
+            var open = panel && !panel.classList.contains("hidden");
+            if (ev.key === "ArrowDown" && open) {
+              ev.preventDefault();
+              setCustomerSuggestActive(custSuggestActive + 1);
+            } else if (ev.key === "ArrowUp" && open) {
+              ev.preventDefault();
+              setCustomerSuggestActive(custSuggestActive - 1);
+            } else if (ev.key === "Enter" && open && custSuggestActive >= 0) {
+              ev.preventDefault();
+              pickCustomerSuggestion(custSuggestActive);
+            } else if (ev.key === "Escape") {
+              hideCustomerSuggestions();
+            }
+          });
+        }
 
         /* ---------- Prefill: defaults, then URL params ---------- */
         function todayISO() {
@@ -2329,8 +2459,8 @@
           if (v !== null && v.trim() !== "") { $(id).value = v.trim(); }
         }
         prefill("job", "f-job");
-        // ?customer= selects the matching listed customer, or lands
-        // in the Other text field when it isn't one of them.
+        // ?customer= fills the write box with the given name,
+        // whether or not it matches a listed customer.
         var custParam = params.get("customer");
         if (custParam !== null && custParam.trim() !== "") { setCustomerValue(custParam); }
         prefill("phone", "f-phone");
@@ -2719,7 +2849,7 @@
 
         /* ---------- Auto-save on this phone (per job) ---------- */
         var SAVE_PREFIX = "bkpackz-ltc:";
-        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-lead-other", "f-customer", "f-customer-other", "f-phone", "f-crew", "f-notes", "f-initials", "f-time-wh-start", "f-time-arrive", "f-time-leave-site", "f-time-wh-depart", "f-sig-name", "f-break-item", "f-break-explain"];
+        var FIELD_IDS = ["f-date", "f-job", "f-lead", "f-lead-other", "f-customer", "f-phone", "f-crew", "f-notes", "f-initials", "f-time-wh-start", "f-time-arrive", "f-time-leave-site", "f-time-wh-depart", "f-sig-name", "f-break-item", "f-break-explain"];
         var currentKey = null;
         var saveStatusTimer = null;
 
@@ -2786,9 +2916,10 @@
           // carry — so restore, the PDF, and submissions never see
           // the dropdown's internal "Other" marker.
           fields["f-lead"] = getLeadValue();
-          // Same for the customer: it saves as its effective name
-          // (picked customer, or the typed Other name), so restore
-          // never sees the dropdown's internal "Other" marker.
+          // The customer saves as its typed name — the same
+          // plain-name value older saves carry (they stored the
+          // picked or typed name the same way), so restore, the
+          // PDF, and submissions all read it unchanged.
           fields["f-customer"] = getCustomerValue();
           var checks = {};
           allBoxes().forEach(function (b) {
@@ -2846,10 +2977,9 @@
             // other name lands in the Other text field. (The generic
             // loop above cannot put a non-listed name into a select.)
             if (typeof s.fields["f-lead"] === "string") { setLeadValue(s.fields["f-lead"]); }
-            // Customer restore: the saved value is a plain name —
-            // route it through setCustomerValue the same way, so a
-            // listed customer selects and any other name lands in
-            // the Other text field.
+            // Customer restore: the saved value is a plain typed
+            // name — route it through setCustomerValue so it lands
+            // in the write box exactly as saved (listed or not).
             if (typeof s.fields["f-customer"] === "string") { setCustomerValue(s.fields["f-customer"]); }
           }
           if (s.type) { setType(s.type); }
@@ -3084,33 +3214,22 @@
           { customer: "David Goldblum", job: "737-25-00068", type: "packback", date: "2026-11-20", lead: "" }
         ];
 
-        // The Customer dropdown's options: one per customer
-        // (multi-day customers appear once), each labelled with its
-        // job number so the tech can confirm the right job before
-        // picking. Options are inserted before the "Other" choice,
-        // which always stays last.
-        (function fillCustomerList() {
-          var sel = $("f-customer");
-          if (!sel) { return; }
-          var otherOpt = null;
-          for (var i = 0; i < sel.options.length; i++) {
-            if (sel.options[i].value === CUSTOMER_OTHER_VALUE) { otherOpt = sel.options[i]; break; }
-          }
+        // The write box's autofill suggestions: one per customer +
+        // job pair in the snapshot (a multi-day job appears once;
+        // a customer with several different jobs appears once per
+        // job), each shown with its job number so the tech can
+        // confirm the right job before picking. The list feeds
+        // renderCustomerSuggestions / pickCustomerSuggestion in the
+        // Customer section above; typing a name that isn't listed
+        // is simply kept.
+        (function fillCustomerSuggestions() {
           var seen = {};
           JOB_DAYS.forEach(function (r) {
-            var key = r.customer.toLowerCase();
+            var key = r.customer.toLowerCase() + "|" + r.job.toLowerCase();
             if (seen[key]) { return; }
             seen[key] = true;
-            var sopt = document.createElement("option");
-            sopt.value = r.customer;
-            sopt.textContent = r.customer + " — " + r.job;
-            sel.insertBefore(sopt, otherOpt);
+            CUSTOMER_SUGGESTIONS.push({ customer: r.customer, job: r.job });
           });
-          // A name that arrived before the options existed (URL
-          // prefill or a restored save) sat in the Other text field;
-          // re-apply it now so a listed customer becomes a real
-          // selection in the dropdown.
-          setCustomerValue(getCustomerValue());
         })();
 
         function rowsForCustomer(name) {
@@ -3122,30 +3241,6 @@
           var n = num.trim().toLowerCase();
           if (!n) { return []; }
           return JOB_DAYS.filter(function (r) { return r.job.toLowerCase() === n; });
-        }
-
-        // Customer dropdown: picking a listed customer runs the
-        // same autofill as ever (Job #, Type, and Date/Lead for a
-        // single-day match). Picking "Other" reveals the fill-in
-        // name field and moves focus to it; typing a listed name
-        // there runs the same autofill as picking it would.
-        var custSelEl = $("f-customer");
-        if (custSelEl) {
-          custSelEl.addEventListener("change", function () {
-            syncCustomerOtherVisibility();
-            if (custSelEl.value === CUSTOMER_OTHER_VALUE) {
-              var otherEl = $("f-customer-other");
-              if (otherEl) { try { otherEl.focus(); } catch (e) { /* ignore */ } }
-              return;
-            }
-            if (custSelEl.value) { applyAutofill(rowsForCustomer(custSelEl.value), "customer"); }
-          });
-        }
-        var custOtherEl = $("f-customer-other");
-        if (custOtherEl) {
-          custOtherEl.addEventListener("input", function () {
-            applyAutofill(rowsForCustomer(custOtherEl.value), "customer");
-          });
         }
 
         // Apply a matched set of rows. The counterpart field (Job # when
@@ -5538,13 +5633,13 @@
         });
 
         /* Service worker: precaches the app shell (cache-first with
-           background revalidation — see data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjQiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK) so the app opens
+           background revalidation — see data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjUiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK) so the app opens
            and runs fully offline after one online visit.
            Registration prefers a root-level sw.js: where the host
            serves one (e.g. GitHub Pages), its scope covers the page and
            offline reopening works end to end. This artifact serves only
            index.html and assets/, so on the Muse host the root attempt
-           fails and we fall back to data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjQiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK — its scope is limited
+           fails and we fall back to data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjUiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK — its scope is limited
            to assets/ and cannot intercept the page there, but the shell
            artwork is still cached and the page works the same online.
            Any failure is ignored either way. */
@@ -5552,7 +5647,7 @@
           window.addEventListener("load", function () {
             function registerAssetsWorker() {
               try {
-                var reg = window.navigator.serviceWorker.register("data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjQiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK");
+                var reg = window.navigator.serviceWorker.register("data:application/javascript;base64,LyogTGVhZCBUZWNoIERhaWx5IENoZWNrbGlzdCDigJQgYXBwLXNoZWxsIHNlcnZpY2Ugd29ya2VyLgogKgogKiBTdHJhdGVneTogY2FjaGUtZmlyc3Qgd2l0aCBiYWNrZ3JvdW5kIHJldmFsaWRhdGlvbiAoc3RhbGUtd2hpbGUtCiAqIHJldmFsaWRhdGUpIGZvciB0aGUgcGFnZSBhbmQgZXZlcnkgc2FtZS1vcmlnaW4gYXNzZXQuIEFmdGVyIGEgdGVjaAogKiBvcGVucyB0aGUgYXBwIG9uY2Ugd2hpbGUgb25saW5lLCB0aGUgd2hvbGUgc2hlbGwg4oCUIHBhZ2UsIG1hbmlmZXN0LAogKiBCSyBsb2dvLCBrYW5nYXJvbyBpY29ucyDigJQgaXMgaW4gdGhlIGNhY2hlLCBzbyB0aGUgYXBwIG9wZW5zLCBmaWxscywKICogYXV0by1zYXZlcyAobG9jYWxTdG9yYWdlKSwgYnVpbGRzIHRoZSBQREYsIGFuZCBkb3dubG9hZHMvc2hhcmVzIGl0CiAqIHdpdGggbm8gbmV0d29yayBhdCBhbGwuIE9ubGluZSB2aXNpdHMgcXVpZXRseSByZWZyZXNoIHRoZSBjYWNoZSBpbgogKiB0aGUgYmFja2dyb3VuZCwgYW5kIGEgdmVyc2lvbiBidW1wIChuZXcgQ0FDSEUgbmFtZSkgcmVwbGFjZXMgdGhlIG9sZAogKiBzaGVsbCB3aG9sZXNhbGUgb24gYWN0aXZhdGUuCiAqCiAqIFRoZSBwYWdlIGhhcyBubyBDRE4gZGVwZW5kZW5jaWVzIOKAlCBpdHMgc3R5bGVzLCBzY3JpcHRzLCBhbmQgdGhlIFBERgogKiB3cml0ZXIgYXJlIGFsbCBpbmxpbmUgaW4gaW5kZXguaHRtbCDigJQgc28gY2FjaGluZyB0aGUgcGFnZSBwbHVzIHRoZQogKiBhc3NldHMgYmVsb3cgY292ZXJzIGV2ZXJ5dGhpbmcgdGhlIGFwcCBuZWVkcyB0byBydW4gb2ZmbGluZS4KICoKICogTGF5b3V0IG5vdGU6IHRoaXMgYXJ0aWZhY3Qgc2VydmVzIG9ubHkgaW5kZXguaHRtbCBwbHVzIGZpbGVzIHVuZGVyCiAqIGFzc2V0cy8sIHNvIG9uIHRoZSBNdXNlIGhvc3QgdGhpcyBzY3JpcHQgbGl2ZXMgaW4gYXNzZXRzLyBhbmQgaXRzCiAqIHNjb3BlIGlzIGxpbWl0ZWQgdG8gdGhhdCBmb2xkZXIg4oCUIGl0IGNhbm5vdCBjb250cm9sIHRoZSBwYWdlIHRoZXJlLgogKiBUaGUgU0hFTEwgbGlzdCB0aGVyZWZvcmUgY2FycmllcyBib3RoIHJlbGF0aXZlIGZvcm1zICgiLi94IiBmb3Igd2hlbgogKiB0aGUgd29ya2VyIHNpdHMgbmV4dCB0byB0aGUgYXNzZXRzLCAiYXNzZXRzL3giIGZvciB3aGVuIGl0IGlzIHNlcnZlZAogKiBmcm9tIHRoZSBzaXRlIHJvb3QsIGUuZy4gR2l0SHViIFBhZ2VzKTogZWFjaCBlbnRyeSBpcyBhZGRlZCBvbiBpdHMKICogb3duLCBzbyB3aGljaGV2ZXIgZm9ybSBkb2Vzbid0IGFwcGx5IHNpbXBseSBmYWlscyBhbmQgaXMgc2tpcHBlZC4KICogTm90aGluZyBoZXJlIHRvdWNoZXMgbG9jYWxTdG9yYWdlLCBzbyBwZXItam9iIGF1dG8tc2F2ZSBpcyB1bmFmZmVjdGVkLgogKi8KdmFyIENBQ0hFID0gImx0Yy1zaGVsbC12MjUiOwp2YXIgU0hFTEwgPSBbCiAgIi4uLyIsCiAgIi4uL2luZGV4Lmh0bWwiLAogICIuLyIsCiAgIi4vaW5kZXguaHRtbCIsCiAgIi4vYmstcGFja291dHotbG9nby5wbmciLAogICJhc3NldHMvYmstcGFja291dHotbG9nby5wbmciLAogICIuL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiYXNzZXRzL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAiLi9pY29uLTE5Mi5wbmciLAogICJhc3NldHMvaWNvbi0xOTIucG5nIiwKICAiLi9pY29uLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi01MTIucG5nIiwKICAiLi9pY29uLW1hc2thYmxlLTUxMi5wbmciLAogICJhc3NldHMvaWNvbi1tYXNrYWJsZS01MTIucG5nIiwKICAiLi9hcHBsZS10b3VjaC1pY29uLnBuZyIsCiAgImFzc2V0cy9hcHBsZS10b3VjaC1pY29uLnBuZyIKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiaW5zdGFsbCIsIGZ1bmN0aW9uIChldmVudCkgewogIGV2ZW50LndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGZ1bmN0aW9uIChjYWNoZSkgewogICAgICAvLyBBZGQgZmlsZXMgb25lIGJ5IG9uZSBzbyBhIHNpbmdsZSBtaXNzaW5nIGZpbGUgY2FuJ3QgZmFpbCB0aGUgaW5zdGFsbC4KICAgICAgcmV0dXJuIFByb21pc2UuYWxsKFNIRUxMLm1hcChmdW5jdGlvbiAodXJsKSB7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZCh1cmwpLmNhdGNoKGZ1bmN0aW9uICgpIHsgLyogb3B0aW9uYWwgc2hlbGwgZmlsZSAqLyB9KTsKICAgICAgfSkpOwogICAgfSkudGhlbihmdW5jdGlvbiAoKSB7IHJldHVybiBzZWxmLnNraXBXYWl0aW5nKCk7IH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoImFjdGl2YXRlIiwgZnVuY3Rpb24gKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLmtleXMoKS50aGVuKGZ1bmN0aW9uIChrZXlzKSB7CiAgICAgIHJldHVybiBQcm9taXNlLmFsbChrZXlzLm1hcChmdW5jdGlvbiAoa2V5KSB7CiAgICAgICAgcmV0dXJuIGtleSA9PT0gQ0FDSEUgPyBudWxsIDogY2FjaGVzLmRlbGV0ZShrZXkpOwogICAgICB9KSk7CiAgICB9KS50aGVuKGZ1bmN0aW9uICgpIHsgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOyB9KQogICk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCJmZXRjaCIsIGZ1bmN0aW9uIChldmVudCkgewogIHZhciByZXEgPSBldmVudC5yZXF1ZXN0OwogIGlmIChyZXEubWV0aG9kICE9PSAiR0VUIikgeyByZXR1cm47IH0KCiAgdmFyIHVybDsKICB0cnkgeyB1cmwgPSBuZXcgVVJMKHJlcS51cmwpOyB9IGNhdGNoIChlKSB7IHJldHVybjsgfQogIC8vIENyb3NzLW9yaWdpbiByZXF1ZXN0cyAobm9uZSBpbiB0aGUgYXBwIHRvZGF5KSBwYXNzIHN0cmFpZ2h0IHRocm91Z2guCiAgaWYgKHVybC5vcmlnaW4gIT09IHNlbGYubG9jYXRpb24ub3JpZ2luKSB7IHJldHVybjsgfQoKICAvLyBDYWNoZS1maXJzdCB3aXRoIGJhY2tncm91bmQgcmV2YWxpZGF0aW9uIGZvciB0aGUgcGFnZSBhbmQgYWxsCiAgLy8gc2FtZS1vcmlnaW4gYXNzZXRzOiBzZXJ2ZSB0aGUgY2FjaGVkIGNvcHkgaW1tZWRpYXRlbHkgd2hlbiB0aGVyZQogIC8vIGlzIG9uZSAodGhhdCBpcyB3aGF0IG1ha2VzIG9mZmxpbmUgb3BlbnMgd29yayksIGFuZCByZWZyZXNoIHRoZQogIC8vIGNhY2hlIGZyb20gdGhlIG5ldHdvcmsgaW4gdGhlIGJhY2tncm91bmQgc28gdGhlIG5leHQgdmlzaXQgcGlja3MKICAvLyB1cCBhbnkgdXBkYXRlLiBpZ25vcmVTZWFyY2ggbGV0cyBhIG1vcm5pbmcgbGluaydzID9qb2I94oCmIHF1ZXJ5CiAgLy8gcmV1c2UgdGhlIGNhY2hlZCBwYWdlIGluc3RlYWQgb2YgbWlzc2luZyB0aGUgY2FjaGUuCiAgZXZlbnQucmVzcG9uZFdpdGgoCiAgICBjYWNoZXMub3BlbihDQUNIRSkudGhlbihmdW5jdGlvbiAoY2FjaGUpIHsKICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKHJlcSwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkudGhlbihmdW5jdGlvbiAoaGl0KSB7CiAgICAgICAgdmFyIG5ldHdvcmsgPSBmZXRjaChyZXEpLnRoZW4oZnVuY3Rpb24gKHJlcykgewogICAgICAgICAgaWYgKHJlcyAmJiByZXMub2spIHsKICAgICAgICAgICAgdmFyIGNvcHkgPSByZXMuY2xvbmUoKTsKICAgICAgICAgICAgY2FjaGUucHV0KHJlcSwgY29weSkuY2F0Y2goZnVuY3Rpb24gKCkgeyAvKiBjYWNoZSB3cml0ZSBpcyBiZXN0LWVmZm9ydCAqLyB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybiByZXM7CiAgICAgICAgfSkuY2F0Y2goZnVuY3Rpb24gKCkgeyByZXR1cm4gbnVsbDsgfSk7CgogICAgICAgIGlmIChoaXQpIHsKICAgICAgICAgIC8vIFNlcnZlIHRoZSBjYWNoZSBub3c7IHRoZSBuZXR3b3JrIHByb21pc2UgYWJvdmUga2VlcHMKICAgICAgICAgIC8vIHJ1bm5pbmcgdG8gcmV2YWxpZGF0ZSBmb3IgbmV4dCB0aW1lLgogICAgICAgICAgcmV0dXJuIGhpdDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG5ldHdvcmsudGhlbihmdW5jdGlvbiAocmVzKSB7CiAgICAgICAgICBpZiAocmVzKSB7IHJldHVybiByZXM7IH0KICAgICAgICAgIC8vIE9mZmxpbmUgd2l0aCBub3RoaW5nIGNhY2hlZCBmb3IgdGhpcyByZXF1ZXN0OiBmb3IgYSBwYWdlCiAgICAgICAgICAvLyBsb2FkLCBoYW5kIGJhY2sgdGhlIGNhY2hlZCBjaGVja2xpc3QgcGFnZSBpdHNlbGYuCiAgICAgICAgICBpZiAocmVxLm1vZGUgPT09ICJuYXZpZ2F0ZSIpIHsKICAgICAgICAgICAgcmV0dXJuIGNhY2hlLm1hdGNoKCIuLi9pbmRleC5odG1sIiwgeyBpZ25vcmVTZWFyY2g6IHRydWUgfSkKICAgICAgICAgICAgICAudGhlbihmdW5jdGlvbiAocGFnZSkgeyByZXR1cm4gcGFnZSB8fCBjYWNoZS5tYXRjaCgiaW5kZXguaHRtbCIsIHsgaWdub3JlU2VhcmNoOiB0cnVlIH0pOyB9KQogICAgICAgICAgICAgIC50aGVuKGZ1bmN0aW9uIChwYWdlKSB7IHJldHVybiBwYWdlIHx8IGNhY2hlLm1hdGNoKCIuL2luZGV4Lmh0bWwiLCB7IGlnbm9yZVNlYXJjaDogdHJ1ZSB9KTsgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKCIiLCB7IHN0YXR1czogNTA0LCBzdGF0dXNUZXh0OiAiT2ZmbGluZSIgfSk7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSkKICApOwp9KTsK");
                 if (reg && reg.catch) { reg.catch(function () { /* shell cache unavailable */ }); }
               } catch (e) { /* ignore */ }
             }
