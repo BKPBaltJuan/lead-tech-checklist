@@ -22,7 +22,7 @@
  * own, so whichever form doesn't apply simply fails and is skipped.
  * Nothing here touches localStorage, so per-job auto-save is unaffected.
  */
-var CACHE = "ltc-shell-v4";
+var CACHE = "ltc-shell-v5";
 var SHELL = [
   "../",
   "../index.html",
